@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:barcode_scan2/barcode_scan2.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -33,17 +33,24 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, String>> scannedProducts = [];
 
   Future<void> _scanBarcode() async {
-    try {
-      var result = await BarcodeScanner.scan();
-      if (result.rawContent.isNotEmpty) {
-        await _fetchProductData(result.rawContent);
-      }
-    } catch (e) {
-      print("Erreur de scan: $e");
-    }
+    if (!mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MobileScanner(
+        onDetect: (barcodeCapture) {
+          if (barcodeCapture.barcodes.isNotEmpty) {
+            final barcode = barcodeCapture.barcodes.first;
+            if (barcode.rawValue != null && mounted) {
+              _fetchProductData(barcode.rawValue!);
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+          }
+        },
+      ),
+    ));
   }
 
   Future<void> _fetchProductData(String barcode) async {
+    if (!mounted) return;
     final url = Uri.parse('https://world.openfoodfacts.org/api/v0/product/$barcode.json');
     final response = await http.get(url);
 
@@ -55,13 +62,16 @@ class _MyHomePageState extends State<MyHomePage> {
       final allergens = productData['product']?['allergens'] ?? 'Aucun';
       final additives = productData['product']?['additives_tags']?.join(', ') ?? 'Aucun';
 
-      await _showDlcDialog(barcode, productName, brand, categories, allergens, additives);
+      if (mounted) {
+        await _showDlcDialog(barcode, productName, brand, categories, allergens, additives);
+      }
     } else {
       print("Produit non trouvé.");
     }
   }
 
   Future<void> _showDlcDialog(String barcode, String productName, String brand, String categories, String allergens, String additives) async {
+    if (!mounted) return;
     DateTime? selectedDate;
 
     await showDialog(
@@ -80,7 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     firstDate: DateTime.now(),
                     lastDate: DateTime(2100),
                   );
-                  if (pickedDate != null) {
+                  if (pickedDate != null && mounted) {
                     setState(() {
                       selectedDate = pickedDate;
                     });
@@ -88,13 +98,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 child: const Text("Sélectionner la date"),
               ),
-              if (selectedDate != null) Text("Date sélectionnée: ${selectedDate!.toLocal().toString().split(' ')[0]}")
+              if (selectedDate != null) Text("Date sélectionnée: ${selectedDate.toString().split(' ')[0]}")
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                if (selectedDate != null) {
+                if (selectedDate != null && mounted) {
                   setState(() {
                     scannedProducts.add({
                       "code": barcode,
@@ -103,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       "categories": categories,
                       "allergens": allergens,
                       "additives": additives,
-                      "dlc": selectedDate!.toLocal().toString().split(' ')[0],
+                      "dlc": selectedDate.toString().split(' ')[0],
                       "date": DateTime.now().toString(),
                     });
                   });
@@ -119,6 +129,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void dispose() {
+    scannedProducts.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -130,7 +146,8 @@ class _MyHomePageState extends State<MyHomePage> {
           final item = scannedProducts[index];
           return ListTile(
             title: Text(item['name']!),
-            subtitle: Text("Code: ${item['code']}\nMarque: ${item['brand']}\nCatégories: ${item['categories']}\nAllergènes: ${item['allergens']}\nAdditifs: ${item['additives']}\nDLC: ${item['dlc']}"),
+            subtitle: Text(
+                "Code: ${item['code']}\nMarque: ${item['brand']}\nCatégories: ${item['categories']}\nAllergènes: ${item['allergens']}\nAdditifs: ${item['additives']}\nDLC: ${item['dlc']}"),
             trailing: Text(item['date']!),
           );
         },

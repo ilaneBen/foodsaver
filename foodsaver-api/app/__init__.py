@@ -5,6 +5,7 @@ import os
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
+from flask_swagger_ui import get_swaggerui_blueprint
 
 db = SQLAlchemy()
 
@@ -31,6 +32,10 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app, db)
     jwt = JWTManager(app)
+
+    # Swagger configuration
+    SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
+    API_URL = "/static/swagger.yaml"  # Path to your Swagger spec
     
     from .models import User, TokenBlocklist
 
@@ -40,6 +45,10 @@ def create_app():
         jti = jwt_payload["jti"]
         token = db.session.query(TokenBlocklist.id).filter_by(jti=jti).scalar()
         return token is not None
+
+
+    swagger_ui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
+    app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
     # Importer les routes
     from .auth import auth

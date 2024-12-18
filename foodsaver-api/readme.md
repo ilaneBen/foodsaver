@@ -15,5 +15,7 @@
 ## Créer la base de donnée MySql ou utiliser Docker avec le fichier compose.yaml
 
 ## Créer les tables
-`export FLASK_APP=main.py`
 `flask db upgrade`
+
+## lancer l'API Flask
+`python app.py`

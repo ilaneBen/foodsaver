@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '/screens/login.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,10 +18,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(),
+      initialRoute: '/login', // Définit la route initiale
+      routes: {
+        '/login': (context) => const LoginPage(),
+        '/home': (context) => const MyHomePage(),
+      },
     );
   }
 }
+
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -78,7 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Entrer la DLC"),
+          title: const Text("Entrer la DLC"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

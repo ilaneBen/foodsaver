@@ -8,8 +8,7 @@ services:
     container_name: flask-container
     environment:
       FLASK_ENV: development
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
+      MYSQL_HOST: ${MYSQL_HOST}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: root
@@ -25,12 +24,12 @@ services:
     container_name: mysql-container
     environment:
       MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
+      MYSQL_PORT: ${MYSQL_PORT}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3307:3306"
+      - "${MYSQL_PORT}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
 
@@ -39,7 +38,7 @@ services:
     container_name: phpmyadmin-container
     environment:
       PMA_HOST: mysql
-      PMA_PORT: 3306
+      PMA_PORT: ${MYSQL_PORT}
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "8080:80"

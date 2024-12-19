@@ -16,6 +16,8 @@
 
 ## Créer les tables
 `flask db upgrade`
+## dans le container docker
+`docker-compose run flask-app flask db upgrade`
 
 ## lancer l'API Flask
 `python app.py`

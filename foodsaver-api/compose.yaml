@@ -10,9 +10,9 @@ services:
       FLASK_ENV: development
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
-      MYSQL_USER: foodsaver
-      MYSQL_PASSWORD: password
-      MYSQL_DATABASE: foodsaver
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - "5000:5000"
     depends_on:
@@ -26,9 +26,9 @@ services:
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
-      MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
     volumes:

@@ -1,16 +1,50 @@
+version: "3.8"
+
 services:
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flask-container
+    environment:
+      FLASK_ENV: development
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: foodsaver
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: foodsaver
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+    volumes:
+      - .:/app
+
   mysql:
     image: mysql:latest
     container_name: mysql-container
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: foodsaver
-      MYSQL_USER: foodsaver
-      MYSQL_PASSWORD: password
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin-container
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+
 volumes:
-  mysql-data: 
+  mysql-data:

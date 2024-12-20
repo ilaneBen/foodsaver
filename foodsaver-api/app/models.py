@@ -28,6 +28,13 @@ class Product(db.Model):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     img_url: Mapped[str] = mapped_column(String(255), nullable=False)
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "img_url": self.img_url
+        }
+
 class UserProduct(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, db.ForeignKey('user.id'), nullable=False)
@@ -36,3 +43,14 @@ class UserProduct(db.Model):
     created_at: Mapped[date] = mapped_column(Date, nullable=False, default=date.today())
     user = db.relationship('User', backref=db.backref('user_products', lazy=True))
     product = db.relationship('Product', backref=db.backref('user_products', lazy=True))
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "product_id": self.product_id,
+            "product_name": self.product.name,
+            "product_img_url": self.product.img_url,
+            "dlc": self.dlc,
+            "created_at": self.created_at
+        }

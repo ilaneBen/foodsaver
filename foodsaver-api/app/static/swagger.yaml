@@ -3,9 +3,17 @@ info:
   title: Food Saver API
   version: 1.0.0
   description: Food Saver auth and products routes 
+tags:
+  - name: Authentification
+    description: Routes liées à l'authentification des utilisateurs (login, register, logout)
+  - name: Produit
+    description: Routes liées à la gestion des produits (ajout, récupération des produits)
+
 paths:
   /login:
     post:
+      tags:
+        - Authentification
       summary: User login
       description: Authenticate a user and return a JWT access token.
       requestBody:
@@ -44,6 +52,8 @@ paths:
                     example: "Bad email or password"
   /register:
     post:
+      tags:
+        - Authentification
       summary: User registration
       description: Register a new user.
       requestBody:
@@ -82,6 +92,8 @@ paths:
                     example: "Missing email or password"
   /logout:
     delete:
+      tags:
+        - Authentification
       summary: User logout
       description: Revoke the JWT of the authenticated user.
       security:
@@ -107,6 +119,228 @@ paths:
                   msg:
                     type: string
                     example: "Missing Authorization Header"
+
+  /products:
+    post:
+      tags:
+        - Produit
+      summary: Add a new product
+      description: Add a new product to the database.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the product.
+                  example: "Apple"
+                img_url:
+                  type: string
+                  description: The image URL of the product.
+                  example: "https://example.com/apple.jpg"
+      responses:
+        '201':
+          description: Product successfully added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  name:
+                    type: string
+                    example: "Apple"
+                  img_url:
+                    type: string
+                    example: "https://example.com/apple.jpg"
+        '400':
+          description: Missing or invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Missing product name or image URL"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Failed to add product"
+
+    get:
+      tags:
+        - Produit
+      summary: Get all products
+      description: Retrieve all products from the database.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: "Apple"
+                    img_url:
+                      type: string
+                      example: "https://example.com/apple.jpg"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Failed to retrieve products"
+
+  /user/products:
+    post:
+      tags:
+        - Produit
+      summary: Add a product for a user
+      description: Add a specific product to a user's product list by associating it with the user's ID and a given expiration date.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id:
+                  type: integer
+                  description: The ID of the product to add to the user.
+                  example: 1
+                dlc:
+                  type: string
+                  format: date
+                  description: The expiration date of the product for the user.
+                  example: "2024-12-31"
+      responses:
+        '201':
+          description: Product successfully added for the user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Product successfully added for the user"
+                  product:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: "Apple"
+                      img_url:
+                        type: string
+                        example: "https://example.com/apple.jpg"
+                  dlc:
+                    type: string
+                    format: date
+                    example: "2024-12-31"
+        '400':
+          description: Missing or invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Missing product_id or dlc"
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Product not found"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Failed to add product for the user"
+
+    get:
+      tags:
+        - Produit
+      summary: Get all products for a user
+      description: Retrieve all products associated with the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved products for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: "Apple"
+                    img_url:
+                      type: string
+                      example: "https://example.com/apple.jpg"
+                    dlc:
+                      type: string
+                      format: date
+                      example: "2024-12-31"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Failed to retrieve products for the user"
+
 components:
   securitySchemes:
     bearerAuth:

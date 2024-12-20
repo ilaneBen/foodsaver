@@ -16,7 +16,7 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"msg": "Bad email or password"}), 401
 
-    access_token = create_access_token(identity=email)
+    access_token = create_access_token(identity= str(user.id))
     return jsonify(access_token=access_token)
 
 

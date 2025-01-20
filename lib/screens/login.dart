@@ -1,6 +1,8 @@
+import 'package:connected_fridge/main.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // Pour parser le JSON
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,7 +31,8 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0:5000/login'),
+      // TODO: Remplacer l url pas une variable 
+        Uri.parse('http://127.0.0:5001/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
@@ -41,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
           print('Token: ${data['token']}');
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
+            MaterialPageRoute(builder: (context) => const MyHomePage()),
           );
         } else {
           // Erreur renvoyée par l'API
@@ -140,18 +143,3 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-      ),
-      body: const Center(
-        child: Text('Welcome to the Home Page!'),
-      ),
-    );
-  }
-}

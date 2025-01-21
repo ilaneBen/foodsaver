@@ -35,31 +35,34 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:5000/login'),
+        Uri.parse('http://127.0.0.1:5000/login'), // Utilisez 10.0.2.2 pour les émulateurs Android
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
 
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-      Navigator.pushReplacementNamed(context, ScanScreen.id);
-     
+        print('Login successful: $data');
+        Navigator.pushReplacementNamed(context, ScanScreen.id); // Assurez-vous que ScanScreen.id est défini
       } else {
         setState(() {
-          _errorMessage = 'Failed to connect to server (${response.statusCode})';
+          _errorMessage = 'Failed to connect to server (${response.statusCode}): ${response.body}';
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'An error occurred: $e';
       });
+      print('Error during login: $e');
     } finally {
       setState(() {
         _saving = false;
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter your email';
-                                } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                                } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                    .hasMatch(value)) {
                                   return 'Please enter a valid email';
                                 }
                                 return null;
@@ -137,7 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               builder: (BuildContext context) {
                                 return AlertDialog(
                                   title: const Text('Forgot Password'),
-                                  content: const Text('Feature not implemented.'),
+                                  content:
+                                      const Text('Feature not implemented.'),
                                   actions: [
                                     TextButton(
                                       child: const Text('OK'),

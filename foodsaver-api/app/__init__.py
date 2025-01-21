@@ -6,8 +6,10 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from flask_swagger_ui import get_swaggerui_blueprint
+from flask_cors import CORS
 
 db = SQLAlchemy()
+cors = CORS()
 
 # fonction pour créer l'application Flask
 def create_app():
@@ -32,6 +34,8 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app, db)
     jwt = JWTManager(app)
+    cors.init_app(app, resources={r"/*": {"origins": "*"}})
+
 
     # Swagger configuration
     SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
@@ -53,8 +57,5 @@ def create_app():
     # Importer les routes
     from .auth import auth
     app.register_blueprint(auth, url_prefix="/")
-
-    from .product import product
-    app.register_blueprint(product, url_prefix="/")
     
     return app

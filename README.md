@@ -71,10 +71,6 @@ Le backend est une API REST développée avec Flask. Il se trouve dans le dossie
    http://localhost:5000
    ```
 
-3. **Endpoints principaux :**
-   - `POST /login` : Authentification utilisateur.
-   - `GET /product/:barcode` : Récupère les informations d'un produit par son code-barres.
-
 ---
 
 ## Configuration Frontend

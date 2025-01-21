@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:5000/login'), // Utilisez 10.0.2.2 pour les émulateurs Android
+        Uri.parse('http://127.0.0.1:5000/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print('Login successful: $data');
-        Navigator.pushReplacementNamed(context, ScanScreen.id); // Assurez-vous que ScanScreen.id est défini
+        Navigator.pushReplacementNamed(context, ScanScreen.id);
       } else {
         setState(() {
           _errorMessage = 'Failed to connect to server (${response.statusCode}): ${response.body}';
@@ -66,53 +66,46 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.popAndPushNamed(context, HomeScreen.id);
-        return false;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: LoadingOverlay(
-          isLoading: _saving,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  const TopScreenImage(screenImageName: 'welcome.png'),
-                  Expanded(
-                    flex: 2,
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: LoadingOverlay(
+        isLoading: _saving,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(25),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const TopScreenImage(screenImageName: 'welcome.png'),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 20.0, right: 15, left: 15),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         const ScreenTitle(title: 'Login'),
                         CustomTextField(
                           textField: TextFormField(
-                              controller: _emailController,
-                              style: const TextStyle(
-                                fontSize: 20,
-                              ),
-                              decoration: kTextInputDecoration.copyWith(
-                                  hintText: 'Email'),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                    .hasMatch(value)) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              }),
+                            controller: _emailController,
+                            style: const TextStyle(fontSize: 20),
+                            decoration: kTextInputDecoration.copyWith(
+                                hintText: 'Email'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your email';
+                              } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                                return 'Please enter a valid email';
+                              }
+                              return null;
+                            },
+                          ),
                         ),
                         CustomTextField(
                           textField: TextFormField(
                             controller: _passwordController,
                             obscureText: true,
-                            style: const TextStyle(
-                              fontSize: 20,
-                            ),
+                            style: const TextStyle(fontSize: 20),
                             decoration: kTextInputDecoration.copyWith(
                                 hintText: 'Password'),
                             validator: (value) {
@@ -130,37 +123,60 @@ class _LoginScreenState extends State<LoginScreen> {
                             _errorMessage,
                             style: const TextStyle(color: Colors.red),
                           ),
-                        CustomBottomScreen(
-                          textButton: 'Login',
-                          heroTag: 'login_btn',
-                          question: 'Forgot password?',
-                          buttonPressed: _login,
-                          questionPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: const Text('Forgot Password'),
-                                  content:
-                                      const Text('Feature not implemented.'),
-                                  actions: [
-                                    TextButton(
-                                      child: const Text('OK'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
+                        Hero(
+                          tag: 'login_btn',
+                          child: CustomButton(
+                            buttonText: 'Login',
+                            onPressed: _login,
+                          ),
                         ),
+                        const SizedBox(height: 15),
+                        const Text(
+                          'Forgot your password?',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        const Text(
+                          'Sign in using',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              onPressed: () {},
+                              icon: CircleAvatar(
+                                radius: 25,
+                                child: Image.asset('assets/images/icons/facebook.png'),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {},
+                              icon: CircleAvatar(
+                                radius: 25,
+                                child: Image.asset('assets/images/icons/google.png'),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {},
+                              icon: CircleAvatar(
+                                radius: 25,
+                                child: Image.asset('assets/images/icons/linkedin.png'),
+                              ),
+                            ),
+                          ],
+                        )
                       ],
                     ),
                   ),
-                ],
-              ),
+                )
+              ],
             ),
           ),
         ),
@@ -168,3 +184,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+

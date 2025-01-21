@@ -6,17 +6,16 @@ import 'dart:convert';
 class ScanScreen extends StatefulWidget {
   final Function(String) onBarcodeScanned;
 
-    static const String id = 'scan_screen';
+  static const String id = 'scan_screen';
 
-    const ScanScreen({required this.onBarcodeScanned, Key? key}) : super(key: key);
-  
-    @override
-    _ScanScreenState createState() => _ScanScreenState();
-  }
-  
-  
-  class _ScanScreenState extends State<ScanScreen> {
-     List<Map<String, String>> scannedProducts = [];
+  const ScanScreen({required this.onBarcodeScanned, Key? key}) : super(key: key);
+
+  @override
+  _ScanScreenState createState() => _ScanScreenState();
+}
+
+class _ScanScreenState extends State<ScanScreen> {
+  List<Map<String, String>> scannedProducts = [];
 
   Future<void> _scanBarcode() async {
     if (!mounted) return;
@@ -64,7 +63,8 @@ class ScanScreen extends StatefulWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Entrer la DLC"),
+          backgroundColor: Colors.white,
+          title: const Text("Entrer la DLC", style: TextStyle(color: Colors.black)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -82,9 +82,20 @@ class ScanScreen extends StatefulWidget {
                     });
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightBlueAccent,
+                  textStyle: const TextStyle(fontSize: 16),
+                ),
                 child: const Text("Sélectionner la date"),
               ),
-              if (selectedDate != null) Text("Date sélectionnée: ${selectedDate.toString().split(' ')[0]}")
+              if (selectedDate != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    "Date sélectionnée: ${selectedDate.toString().split(' ')[0]}",
+                    style: const TextStyle(color: Colors.black87),
+                  ),
+                ),
             ],
           ),
           actions: [
@@ -106,7 +117,7 @@ class ScanScreen extends StatefulWidget {
                 }
                 Navigator.of(context).pop();
               },
-              child: const Text("Enregistrer"),
+              child: const Text("Enregistrer", style: TextStyle(color: Colors.lightBlueAccent)),
             ),
           ],
         );
@@ -123,25 +134,88 @@ class ScanScreen extends StatefulWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Scanner OpenFoodFacts'),
+        backgroundColor: Colors.lightBlueAccent,
+        title: const Text('Scanner OpenFoodFacts', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
       ),
-      body: ListView.builder(
-        itemCount: scannedProducts.length,
-        itemBuilder: (context, index) {
-          final item = scannedProducts[index];
-          return ListTile(
-            title: Text(item['name']!),
-            subtitle: Text(
-                "Code: ${item['code']}\nMarque: ${item['brand']}\nCatégories: ${item['categories']}\nAllergènes: ${item['allergens']}\nAdditifs: ${item['additives']}\nDLC: ${item['dlc']}"),
-            trailing: Text(item['date']!),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _scanBarcode,
-        tooltip: 'Scanner',
-        child: const Icon(Icons.camera_alt),
+      body: Padding(
+        padding: const EdgeInsets.all(25),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 500,
+              width: 300, // Augmenter la hauteur pour une image plus grande
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/woman_fridge.jpg'),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: scannedProducts.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "Aucun produit scanné.",
+                        style: TextStyle(color: Colors.black54, fontSize: 16),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: scannedProducts.length,
+                      itemBuilder: (context, index) {
+                        final item = scannedProducts[index];
+                        return Card(
+                          color: Colors.white,
+                          margin: const EdgeInsets.symmetric(vertical: 10),
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(15),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(item['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                const SizedBox(height: 5),
+                                Text("Code: ${item['code']}", style: const TextStyle(color: Colors.black54)),
+                                Text("Marque: ${item['brand']}", style: const TextStyle(color: Colors.black54)),
+                                Text("Catégories: ${item['categories']}", style: const TextStyle(color: Colors.black54)),
+                                Text("Allergènes: ${item['allergens']}", style: const TextStyle(color: Colors.black54)),
+                                Text("Additifs: ${item['additives']}", style: const TextStyle(color: Colors.black54)),
+                                Text("DLC: ${item['dlc']}", style: const TextStyle(color: Colors.black54)),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Text(
+                                    "Scanné le: ${item['date']!.split(' ')[0]}",
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            ElevatedButton(
+              onPressed: _scanBarcode,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.lightBlueAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.all(15),
+              ),
+              child: const Text("Scanner un produit", style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
       ),
     );
   }

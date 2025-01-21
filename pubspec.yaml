@@ -39,6 +39,9 @@ dependencies:
   path_provider: ^2.1.5
   json_store: ^2.0.2
   http: ^1.2.2
+  mobile_scanner: ^6.0.2
+  simple_barcode_scanner: ^0.2.5
+  
 
 dev_dependencies:
   flutter_test:

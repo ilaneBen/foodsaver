@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ScanScreen extends StatefulWidget {
   final Function(String) onBarcodeScanned;
@@ -13,6 +14,7 @@ class ScanScreen extends StatefulWidget {
   @override
   _ScanScreenState createState() => _ScanScreenState();
 }
+
 
 class _ScanScreenState extends State<ScanScreen> {
   List<Map<String, String>> scannedProducts = [];
@@ -125,6 +127,78 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
+  void _duplicateProduct(int index) {
+    setState(() {
+      final duplicatedProduct = Map<String, String>.from(scannedProducts[index]);
+      scannedProducts.add(duplicatedProduct);
+    });
+  }
+
+  void _deleteProduct(int index) {
+    setState(() {
+      scannedProducts.removeAt(index);
+    });
+  }
+
+  Future<void> _addManualProduct() async {
+    String? productName;
+    String? brand;
+    String? categories;
+    String? dlc;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Ajouter un produit manuellement"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: "Nom du produit"),
+                onChanged: (value) => productName = value,
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: "Marque"),
+                onChanged: (value) => brand = value,
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: "Catégories"),
+                onChanged: (value) => categories = value,
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: "DLC (yyyy-mm-dd)"),
+                onChanged: (value) => dlc = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (productName != null && dlc != null) {
+                  setState(() {
+                    scannedProducts.add({
+                      "code": "Manuel",
+                      "name": productName!,
+                      "brand": brand ?? "Non spécifié",
+                      "categories": categories ?? "Non spécifié",
+                      "allergens": "Non spécifié",
+                      "additives": "Non spécifié",
+                      "dlc": dlc!,
+                      "date": DateTime.now().toString(),
+                    });
+                  });
+                }
+                Navigator.of(context).pop();
+              },
+              child: const Text("Ajouter"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     scannedProducts.clear();
@@ -147,12 +221,12 @@ class _ScanScreenState extends State<ScanScreen> {
           children: [
             Container(
               height: 500,
-              width: 300, // Augmenter la hauteur pour une image plus grande
+              width: 300,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 image: const DecorationImage(
                   image: AssetImage('assets/images/woman_fridge.jpg'),
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
@@ -191,9 +265,34 @@ class _ScanScreenState extends State<ScanScreen> {
                                 Text("DLC: ${item['dlc']}", style: const TextStyle(color: Colors.black54)),
                                 Align(
                                   alignment: Alignment.bottomRight,
-                                  child: Text(
-                                    "Scanné le: ${item['date']!.split(' ')[0]}",
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        "Scanné le: ${item['date']!.split(' ')[0]}",
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      ElevatedButton(
+                                        onPressed: () => _duplicateProduct(index),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.lightBlueAccent,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                          textStyle: const TextStyle(fontSize: 12),
+                                        ),
+                                        child: const Text("Dupliquer"),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      ElevatedButton(
+                                        onPressed: () => _deleteProduct(index),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.redAccent,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                          textStyle: const TextStyle(fontSize: 12),
+                                        ),
+                                        child: const Text("Supprimer"),
+                                      ),
+                                    ],
                                   ),
                                 )
                               ],
@@ -203,16 +302,32 @@ class _ScanScreenState extends State<ScanScreen> {
                       },
                     ),
             ),
-            ElevatedButton(
-              onPressed: _scanBarcode,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.lightBlueAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _scanBarcode,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.lightBlueAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.all(15),
+                  ),
+                  child: const Text("Scanner un produit", style: TextStyle(fontSize: 16)),
                 ),
-                padding: const EdgeInsets.all(15),
-              ),
-              child: const Text("Scanner un produit", style: TextStyle(fontSize: 16)),
+                ElevatedButton(
+                  onPressed: _addManualProduct,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.all(15),
+                  ),
+                  child: const Text("Ajouter manuellement", style: TextStyle(fontSize: 16)),
+                ),
+              ],
             ),
           ],
         ),
@@ -220,3 +335,4 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 }
+

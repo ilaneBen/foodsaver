@@ -7,7 +7,7 @@ import requests
 
 product = Blueprint("product", __name__)
 
-import requests
+
 
 @product.route("/products", methods=["POST"])
 @jwt_required()

@@ -40,7 +40,7 @@ def create_app():
     # Swagger configuration
     SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
     API_URL = "/static/swagger.yaml"  # Path to your Swagger spec
-    
+
     from .models import User, TokenBlocklist
 
     # Callback function to check if a JWT exists in the database blocklist
@@ -57,5 +57,7 @@ def create_app():
     # Importer les routes
     from .auth import auth
     app.register_blueprint(auth, url_prefix="/")
-    
+    from .product import product
+    app.register_blueprint(product, url_prefix="/")
+
     return app

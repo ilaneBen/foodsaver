@@ -1,14 +1,11 @@
-import 'package:connected_fridge/main.dart';
 import '/screens/scan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/components/components.dart';
 import '/constants.dart';
-import '/screens/welcome.dart';
-import '/screens/scan_screen.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import '/screens/home_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,11 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String _errorMessage = '';
 
   Future<void> _login() async {
-    setState(() {
-      _saving = true;
-      _errorMessage = '';
-    });
-
     final email = _emailController.text;
     final password = _passwordController.text;
 
@@ -40,27 +32,29 @@ class _LoginScreenState extends State<LoginScreen> {
         body: jsonEncode({'email': email, 'password': password}),
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('Login successful: $data');
+        final token = data['access_token'];
+
         Navigator.pushReplacementNamed(context, ScanScreen.id);
+
+        if (token != null) {
+          // Stockage du token dans FlutterSecureStorage
+          const storage = FlutterSecureStorage();
+          await storage.write(key: 'auth_token', value: token);
+          print("Token stocké : $token");
+
+          // Redirection vers la page suivante
+          Navigator.pushReplacementNamed(context, ScanScreen.id);
+        } else {
+          print("Erreur : Token non trouvé dans la réponse.");
+        }
       } else {
-        setState(() {
-          _errorMessage = 'Failed to connect to server (${response.statusCode}): ${response.body}';
-        });
+        print(
+            "Erreur lors du login (HTTP ${response.statusCode}): ${response.body}");
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An error occurred: $e';
-      });
-      print('Error during login: $e');
-    } finally {
-      setState(() {
-        _saving = false;
-      });
+      print("Erreur réseau lors du login : $e");
     }
   }
 
@@ -79,7 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const TopScreenImage(screenImageName: 'welcome.png'),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 20.0, right: 15, left: 15),
+                    padding:
+                        const EdgeInsets.only(top: 20.0, right: 15, left: 15),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -94,7 +89,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your email';
-                              } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                              } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                  .hasMatch(value)) {
                                 return 'Please enter a valid email';
                               }
                               return null;
@@ -153,21 +149,24 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: () {},
                               icon: CircleAvatar(
                                 radius: 25,
-                                child: Image.asset('assets/images/icons/facebook.png'),
+                                child: Image.asset(
+                                    'assets/images/icons/facebook.png'),
                               ),
                             ),
                             IconButton(
                               onPressed: () {},
                               icon: CircleAvatar(
                                 radius: 25,
-                                child: Image.asset('assets/images/icons/google.png'),
+                                child: Image.asset(
+                                    'assets/images/icons/google.png'),
                               ),
                             ),
                             IconButton(
                               onPressed: () {},
                               icon: CircleAvatar(
                                 radius: 25,
-                                child: Image.asset('assets/images/icons/linkedin.png'),
+                                child: Image.asset(
+                                    'assets/images/icons/linkedin.png'),
                               ),
                             ),
                           ],
@@ -184,4 +183,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

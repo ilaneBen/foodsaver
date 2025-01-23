@@ -57,5 +57,8 @@ def create_app():
     # Importer les routes
     from .auth import auth
     app.register_blueprint(auth, url_prefix="/")
+
+    from .product import product
+    app.register_blueprint(product, url_prefix="/")
     
     return app

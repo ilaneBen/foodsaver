@@ -20,20 +20,21 @@ class _ScanScreenState extends State<ScanScreen> {
   List<Map<String, String>> scannedProducts = [];
 
   Future<void> _scanBarcode() async {
-    if (!mounted) return;
-    await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => MobileScanner(
-        onDetect: (barcodeCapture) {
-          if (barcodeCapture.barcodes.isNotEmpty) {
-            final barcode = barcodeCapture.barcodes.first;
-            if (barcode.rawValue != null && mounted) {
-              _fetchProductData(barcode.rawValue!);
-              Navigator.of(context, rootNavigator: true).pop();
-            }
-          }
-        },
-      ),
-    ));
+    // if (!mounted) return;
+    // await Navigator.of(context).push(MaterialPageRoute(
+    //   builder: (_) => MobileScanner(
+    //     onDetect: (barcodeCapture) {
+    //       if (barcodeCapture.barcodes.isNotEmpty) {
+    //         final barcode = barcodeCapture.barcodes.first;
+    //         if (barcode.rawValue != null && mounted) {
+    //           _fetchProductData(barcode.rawValue!);
+    //           Navigator.of(context, rootNavigator: true).pop();
+    //         }
+    //       }
+    //     },
+    //   ),
+    // ));
+    _fetchProductData("8594001022038");
   }
 
   Future<void> _fetchProductData(String barcode) async {
@@ -60,6 +61,7 @@ class _ScanScreenState extends State<ScanScreen> {
   Future<void> _showDlcDialog(String barcode, String productName, String brand, String categories, String allergens, String additives) async {
     if (!mounted) return;
     DateTime? selectedDate;
+    TextEditingController _dateController = TextEditingController();
 
     await showDialog(
       context: context,
@@ -70,9 +72,11 @@ class _ScanScreenState extends State<ScanScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ElevatedButton(
+              ElevatedButton.icon(
+                icon: const Icon(Icons.calendar_today),
+                label: const Text("Sélectionner la date"),
                 onPressed: () async {
-                  final pickedDate = await showDatePicker(
+                  final DateTime? pickedDate = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
                     firstDate: DateTime.now(),
@@ -81,6 +85,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   if (pickedDate != null && mounted) {
                     setState(() {
                       selectedDate = pickedDate;
+                      _dateController.text = "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
                     });
                   }
                 },
@@ -88,16 +93,21 @@ class _ScanScreenState extends State<ScanScreen> {
                   backgroundColor: Colors.lightBlueAccent,
                   textStyle: const TextStyle(fontSize: 16),
                 ),
-                child: const Text("Sélectionner la date"),
               ),
-              if (selectedDate != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    "Date sélectionnée: ${selectedDate.toString().split(' ')[0]}",
-                    style: const TextStyle(color: Colors.black87),
+              Padding(
+                key: ValueKey(selectedDate),
+                padding: const EdgeInsets.only(top: 10),
+                child: TextField(
+                  controller: _dateController,
+                  decoration: InputDecoration(
+                    labelText: "Date sélectionnée:",
+                    filled: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30))
                   ),
+                  readOnly: true,
+                  enabled: false,
                 ),
+              ),
             ],
           ),
           actions: [
@@ -325,7 +335,9 @@ class _ScanScreenState extends State<ScanScreen> {
                     ),
                     padding: const EdgeInsets.all(15),
                   ),
-                  child: const Text("Ajouter manuellement", style: TextStyle(fontSize: 16)),
+                  child: const Text(
+                    "Ajouter manuellement", 
+                    style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 15, 78, 20))),
                 ),
               ],
             ),

@@ -18,7 +18,11 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const TopScreenImage(screenImageName: 'home.jpg'),
+              Image.asset(
+                  'assets/images/home.jpg',
+                  width: 400.0,
+                  height: 400.0,
+                ),
               Expanded(
                 child: Padding(
                   padding:
@@ -27,9 +31,9 @@ class HomeScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      const ScreenTitle(title: 'Hello'),
+                      const ScreenTitle(title: 'Bonjour'),
                       const Text(
-                        'Welcome to Tasky, where you manage your daily tasks',
+                        'Foodsaver',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.grey,
@@ -42,7 +46,7 @@ class HomeScreen extends StatelessWidget {
                       Hero(
                         tag: 'login_btn',
                         child: CustomButton(
-                          buttonText: 'Login',
+                          buttonText: 'Se connecter',
                           onPressed: () {
                             Navigator.pushNamed(context, LoginScreen.id);
                           },
@@ -54,7 +58,7 @@ class HomeScreen extends StatelessWidget {
                       Hero(
                         tag: 'signup_btn',
                         child: CustomButton(
-                          buttonText: 'Sign Up',
+                          buttonText: 'S\'inscrire',
                           isOutlined: true,
                           onPressed: () {
                             Navigator.pushNamed(context, SignUpScreen.id);
@@ -64,43 +68,6 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(
                         height: 25,
                       ),
-                      const Text(
-                        'Sign up using',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            onPressed: () {},
-                            icon: CircleAvatar(
-                              radius: 25,
-                              child: Image.asset(
-                                  'assets/images/icons/facebook.png'),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () {},
-                            icon: CircleAvatar(
-                              radius: 25,
-                              backgroundColor: Colors.transparent,
-                              child:
-                                  Image.asset('assets/images/icons/google.png'),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () {},
-                            icon: CircleAvatar(
-                              radius: 25,
-                              child: Image.asset(
-                                  'assets/images/icons/linkedin.png'),
-                            ),
-                          ),
-                        ],
-                      )
                     ],
                   ),
                 ),

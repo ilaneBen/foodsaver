@@ -89,7 +89,7 @@ class ScreenTitle extends StatelessWidget {
 class CustomTextField extends StatelessWidget {
   final Widget textField;
 
-  const CustomTextField({required this.textField, Key? key}) : super(key: key);
+  const CustomTextField({required this.textField, super.key});
 
   @override
   Widget build(BuildContext context) {

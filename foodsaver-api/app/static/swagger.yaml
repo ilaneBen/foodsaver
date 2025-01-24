@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Food Saver API
   version: 1.0.0
-  description: Food Saver auth and products routes 
+  description: Food Saver auth and products routes
 tags:
   - name: Authentification
     description: Routes liées à l'authentification des utilisateurs (login, register, logout)
@@ -30,7 +30,7 @@ paths:
                   type: string
                   example: "password123"
       responses:
-        '200':
+        "200":
           description: Successfully authenticated
           content:
             application/json:
@@ -40,7 +40,7 @@ paths:
                   access_token:
                     type: string
                     example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        '401':
+        "401":
           description: Invalid email or password
           content:
             application/json:
@@ -50,6 +50,7 @@ paths:
                   msg:
                     type: string
                     example: "Bad email or password"
+
   /register:
     post:
       tags:
@@ -70,7 +71,7 @@ paths:
                   type: string
                   example: "password123"
       responses:
-        '201':
+        "201":
           description: User successfully created
           content:
             application/json:
@@ -80,7 +81,7 @@ paths:
                   msg:
                     type: string
                     example: "User created successfully"
-        '400':
+        "400":
           description: Missing or invalid input
           content:
             application/json:
@@ -90,6 +91,7 @@ paths:
                   msg:
                     type: string
                     example: "Missing email or password"
+
   /logout:
     delete:
       tags:
@@ -99,7 +101,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Token successfully revoked
           content:
             application/json:
@@ -109,7 +111,7 @@ paths:
                   msg:
                     type: string
                     example: "JWT revoked"
-        '401':
+        "401":
           description: Unauthorized
           content:
             application/json:
@@ -124,7 +126,7 @@ paths:
     post:
       tags:
         - Produit
-      summary: Add a new product
+      summary: Add a product
       description: Add a new product to the database.
       security:
         - bearerAuth: []
@@ -135,16 +137,24 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                name_eng:
                   type: string
-                  description: The name of the product.
+                  description: The English name of the product (optional, will be translated if missing).
                   example: "Apple"
+                name_fr:
+                  type: string
+                  description: The French name of the product.
+                  example: "Pomme"
                 img_url:
                   type: string
                   description: The image URL of the product.
                   example: "https://example.com/apple.jpg"
+                barcode:
+                  type: string
+                  description: The barcode of the product.
+                  example: "1234567890123"
       responses:
-        '201':
+        "201":
           description: Product successfully added
           content:
             application/json:
@@ -154,13 +164,19 @@ paths:
                   id:
                     type: integer
                     example: 1
-                  name:
+                  name_eng:
                     type: string
                     example: "Apple"
+                  name_fr:
+                    type: string
+                    example: "Pomme"
                   img_url:
                     type: string
                     example: "https://example.com/apple.jpg"
-        '400':
+                  barcode:
+                    type: string
+                    example: "1234567890123"
+        "400":
           description: Missing or invalid input
           content:
             application/json:
@@ -169,8 +185,8 @@ paths:
                 properties:
                   msg:
                     type: string
-                    example: "Missing product name or image URL"
-        '500':
+                    example: "Missing or invalid product details"
+        "500":
           description: Internal Server Error
           content:
             application/json:
@@ -180,43 +196,6 @@ paths:
                   msg:
                     type: string
                     example: "Failed to add product"
-
-    get:
-      tags:
-        - Produit
-      summary: Get all products
-      description: Retrieve all products from the database.
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Successfully retrieved products
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                      example: 1
-                    name:
-                      type: string
-                      example: "Apple"
-                    img_url:
-                      type: string
-                      example: "https://example.com/apple.jpg"
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  msg:
-                    type: string
-                    example: "Failed to retrieve products"
 
   /user/products:
     post:
@@ -243,7 +222,7 @@ paths:
                   description: The expiration date of the product for the user.
                   example: "2024-12-31"
       responses:
-        '201':
+        "201":
           description: Product successfully added for the user
           content:
             application/json:
@@ -259,17 +238,23 @@ paths:
                       id:
                         type: integer
                         example: 1
-                      name:
+                      name_eng:
                         type: string
                         example: "Apple"
+                      name_fr:
+                        type: string
+                        example: "Pomme"
                       img_url:
                         type: string
                         example: "https://example.com/apple.jpg"
+                      barcode:
+                        type: string
+                        example: "1234567890123"
                   dlc:
                     type: string
                     format: date
                     example: "2024-12-31"
-        '400':
+        "400":
           description: Missing or invalid input
           content:
             application/json:
@@ -279,7 +264,7 @@ paths:
                   msg:
                     type: string
                     example: "Missing product_id or dlc"
-        '404':
+        "404":
           description: Product not found
           content:
             application/json:
@@ -289,7 +274,7 @@ paths:
                   msg:
                     type: string
                     example: "Product not found"
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
@@ -308,7 +293,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Successfully retrieved products for the user
           content:
             application/json:
@@ -320,9 +305,12 @@ paths:
                     id:
                       type: integer
                       example: 1
-                    name:
+                    name_eng:
                       type: string
                       example: "Apple"
+                    name_fr:
+                      type: string
+                      example: "Pomme"
                     img_url:
                       type: string
                       example: "https://example.com/apple.jpg"
@@ -330,7 +318,7 @@ paths:
                       type: string
                       format: date
                       example: "2024-12-31"
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
@@ -347,3 +335,4 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+

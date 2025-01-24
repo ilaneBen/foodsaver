@@ -18,8 +18,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _saving = false;
-  String _errorMessage = '';
+  final bool _saving = false;
+  final String _errorMessage = '';
 
   Future<void> _login() async {
     final email = _emailController.text;

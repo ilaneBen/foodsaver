@@ -1,7 +1,5 @@
 import 'package:connected_fridge/screens/scan_screen.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 import '/screens/home_screen.dart';
 import '/screens/login_screen.dart';

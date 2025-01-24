@@ -173,3 +173,27 @@ def get_user_products():
 
     except Exception as e:
         return jsonify({"msg": f"Une erreur s'est produite : {str(e)}"}), 500
+    
+@product.route("/user/products/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_user_product(id):
+    """
+    Supprimer un produit spécifique associé à l'utilisateur connecté.
+    """
+    user_id = get_jwt_identity()  # Récupérer l'ID de l'utilisateur connecté à partir du token
+
+    try:
+        # Rechercher le produit spécifique lié à l'utilisateur
+        user_product = UserProduct.query.filter_by(user_id=user_id, id=id).first()
+
+        if not user_product:
+            return jsonify({"msg": "Produit introuvable ou non associé à cet utilisateur."}), 404
+
+        # Supprimer le produit
+        db.session.delete(user_product)
+        db.session.commit()
+
+        return jsonify({"msg": "Produit supprimé avec succès."}), 200
+
+    except Exception as e:
+        return jsonify({"msg": f"Une erreur s'est produite : {str(e)}"}), 500

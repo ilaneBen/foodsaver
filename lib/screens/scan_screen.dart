@@ -62,6 +62,7 @@ Future<void> _fetchUserProducts() async {
     required String nameFr,
     String? categories,
     String? brand,
+    String? img_url,
     required String dlc,
   }) async {
     final storage = const FlutterSecureStorage();
@@ -110,6 +111,7 @@ Future<void> _fetchUserProducts() async {
             final openFoodData = jsonDecode(openFoodResponse.body)['product'];
             nameFr = openFoodData['product_name'] ?? nameFr;
             brand = openFoodData['brands'] ?? brand;
+            img_url = openFoodData['image_front_url'] ?? img_url;
             categories = openFoodData['categories'] ?? categories;
           } else {
             print(
@@ -160,10 +162,37 @@ Future<void> _fetchUserProducts() async {
 
       // Afficher une pop up pour entrer la DLC
       final selectedDlc = await _promptDlcInput();
-      if (selectedDlc == null) {
-        print("Aucune DLC saisie.");
-        return;
-      }
+  
+  // Vérifie si une valeur a été saisie
+  if (selectedDlc == null) {
+    // Affiche une modal si aucune valeur n'a été saisie
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Erreur"),
+          content: Text("Aucune DLC saisie."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Ferme la modal
+                  _promptDlcInput(); // Relance la sélection DLC
+
+              },
+              child: Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+    return; // Arrête l'exécution si la valeur est null
+  }
+
+  // Si une valeur est saisie, vous pouvez poursuivre votre logique
+  print("DLC sélectionnée : $selectedDlc");
+  // Ajoutez ici les actions nécessaires avec `selectedDlc`
+
+  
 
       // Ajout dans user/products
       final userProductResponse = await http.post(
@@ -177,7 +206,6 @@ Future<void> _fetchUserProducts() async {
           'dlc': selectedDlc,
         }),
       );
-
       if (userProductResponse.statusCode == 201) {
         print("Produit enregistré avec succès dans user/products.");
         _showSuccessDialog("Produit ajouté avec succès !");
@@ -201,7 +229,7 @@ Future<void> _fetchUserProducts() async {
         return AlertDialog(
           title: const Text("Saisir la DLC"),
           content: TextField(
-            decoration: const InputDecoration(labelText: "DLC (dd-mm-yyyy)"),
+            decoration: const InputDecoration(labelText: "DLC (yyyy-mm-dd)"),
             onChanged: (value) => dlc = value,
           ),
           actions: [
@@ -255,33 +283,37 @@ Future<void> _fetchUserProducts() async {
     }
   }
 
-  Future<void> _deleteProduct(String productId) async {
-    final storage = const FlutterSecureStorage();
-    final token = await storage.read(key: 'auth_token');
-
-    if (token == null) {
-      print("Erreur : Token d'authentification non trouvé.");
-      return;
-    }
-
-    try {
-      final url = Uri.parse('http://127.0.0.1:5000/products/$productId');
-      final response = await http.delete(
-        url,
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 204) {
-        print("Produit supprimé avec succès.");
-       _fetchUserProducts();
-      } else {
-        print(
-            "Erreur lors de la suppression du produit (Code HTTP : ${response.statusCode}).");
-      }
-    } catch (e) {
-      print("Erreur lors de la suppression du produit : $e");
-    }
+Future<void> _deleteProduct(int userProductId, String token) async {
+  if (userProductId == null || token.isEmpty) {
+    print("Produit ID ou Token manquant.");
+    return;
   }
+
+  try {
+    print('Suppression du produit: $userProductId avec le token: $token');
+
+    final url = Uri.parse('http://127.0.0.1:5000/user/products/$userProductId');
+    final response = await http.delete(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      print("Produit supprimé avec succès.");
+      // Appeler une méthode pour mettre à jour la liste des produits
+      _fetchUserProducts();
+    } else if (response.statusCode == 404) {
+      print("Produit introuvable (Code HTTP : 404).");
+    } else {
+      print(
+          "Erreur lors de la suppression du produit (Code HTTP : ${response.statusCode}).");
+    }
+  } catch (e) {
+    print("Erreur lors de la suppression du produit : $e");
+  }
+}
+
+
 
 //ajout manuel d'un produit
   Future<void> _addManualProduct() async {
@@ -340,19 +372,19 @@ Future<void> _fetchUserProducts() async {
     await Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => MobileScanner(
         onDetect: (barcodeCapture) {
-          if (barcodeCapture.barcodes.isNotEmpty) {
-            final barcode = barcodeCapture.barcodes.first;
-            if (barcode.rawValue != null && mounted) {
+        //   if (barcodeCapture.barcodes.isNotEmpty) {
+        //     final barcode = barcodeCapture.barcodes.first;
+        //     if (barcode.rawValue != null && mounted) {
               _handleProductSubmission(
-                barcode: barcode.rawValue!,
+                barcode: '3274080005003',
                 nameFr: "", // Remplir avec un nom par défaut si nécessaire
                 categories: null,
                 brand: null,
                 dlc: "", // Remplir avec une DLC par défaut si nécessaire
               );
-              Navigator.of(context, rootNavigator: true).pop();
-            }
-          }
+        //       Navigator.of(context, rootNavigator: true).pop();
+        //     }
+        //   }
         },
       ),
     ));
@@ -378,82 +410,84 @@ Future<void> _fetchUserProducts() async {
   }
 
 
+  Future<String?> _getToken() async {
+      final storage = const FlutterSecureStorage();
+
+    return await storage.read(key: 'auth_token');
+  }
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.lightBlueAccent,
-        title: const Text('Scanner OpenFoodFacts',
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Scanner OpenFoodFacts',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: scannedProducts.isEmpty
-                ? const Center(
-                    child: Text("Aucun produit scanné.",
-                        style: TextStyle(color: Colors.black54, fontSize: 16)),
-                  )
-                : ListView.builder(
-                    itemCount: scannedProducts.length,
-                    itemBuilder: (context, index) {
-                      final item = scannedProducts[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 8.0, horizontal: 16.0),
-                        child: ListTile(
-                          title: Text(item['name_fr'] ?? "Nom inconnu"),
-                          subtitle:
-                              Text("Code: ${item['barcode'] ?? "Inconnu"}"),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.copy),
-                                onPressed: () =>
-                                    _duplicateProduct(item['id'].toString()),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () =>
-                                    _deleteProduct(item['id'].toString()),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: FutureBuilder<String?>(
+        future: _getToken(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text("Erreur lors de la récupération du token."),
+            );
+          }
+
+          final token = snapshot.data;
+
+          return Column(
             children: [
-              ElevatedButton(
-                onPressed: _scanBarcode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightBlueAccent,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                ),
-                child: const Text("Scanner un produit",
-                    style: TextStyle(fontSize: 16)),
-              ),
-              ElevatedButton(
-                onPressed: _addManualProduct,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                ),
-                child: const Text("Ajouter manuellement",
-                    style: TextStyle(fontSize: 16)),
+              Expanded(
+                child: scannedProducts.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "Aucun produit scanné.",
+                          style: TextStyle(color: Colors.black54, fontSize: 16),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: scannedProducts.length,
+                        itemBuilder: (context, index) {
+                          final item = scannedProducts[index];
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 8.0, horizontal: 16.0),
+                            child: ListTile(
+                              title: Text(item['name_fr'] ?? "Nom inconnu"),
+                              subtitle: Text(
+                                  "Code: ${item['barcode'] ?? "Inconnu"}"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.copy),
+                                    onPressed: () => _duplicateProduct(
+                                        item['id'].toString()),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete),
+                                    onPressed: () =>
+                                        _deleteProduct(item['id'], token!),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }

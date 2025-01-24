@@ -197,3 +197,36 @@ def delete_user_product(id):
 
     except Exception as e:
         return jsonify({"msg": f"Une erreur s'est produite : {str(e)}"}), 500
+    
+@product.route("/user/products/duplicate/<int:id>", methods=["POST"])
+@jwt_required()
+def duplicate_user_product(id):
+    """
+    Dupliquer un produit spécifique associé à l'utilisateur connecté.
+    """
+    user_id = get_jwt_identity()  # Récupérer l'ID de l'utilisateur connecté à partir du token
+
+    try:
+        # Rechercher le produit spécifique lié à l'utilisateur
+        user_product = UserProduct.query.filter_by(user_id=user_id, id=id).first()
+
+        if not user_product:
+            return jsonify({"msg": "Produit introuvable ou non associé à cet utilisateur."}), 404
+
+        # Dupliquer le produit
+        # Créer une nouvelle instance en copiant les champs nécessaires
+        new_user_product = UserProduct(
+            user_id=user_product.user_id,
+            product_id=user_product.product_id,
+            dlc=user_product.dlc,  # Date limite de consommation, par exemple
+            # Ajoutez d'autres champs si nécessaires
+        )
+
+        # Ajouter le nouveau produit à la session
+        db.session.add(new_user_product)
+        db.session.commit()
+
+        return jsonify({"msg": "Produit dupliqué avec succès."}), 201
+
+    except Exception as e:
+        return jsonify({"msg": f"Une erreur s'est produite : {str(e)}"}), 500

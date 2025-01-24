@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:intl/intl.dart';
 
 class ScanScreen extends StatefulWidget {
   static const String id = 'scan_screen';
@@ -47,6 +48,7 @@ Future<void> _fetchUserProducts() async {
             .map((product) => Map<String, dynamic>.from(product))
             .toList();
       });
+      print(('userproduct: $scannedProducts'));
     } else {
       print(
           "Erreur lors de la récupération des produits (Code HTTP : ${response.statusCode}).");
@@ -208,6 +210,7 @@ Future<void> _fetchUserProducts() async {
       );
       if (userProductResponse.statusCode == 201) {
         print("Produit enregistré avec succès dans user/products.");
+        _fetchUserProducts();
         _showSuccessDialog("Produit ajouté avec succès !");
       } else {
         print(
@@ -265,7 +268,7 @@ Future<void> _fetchUserProducts() async {
 
     try {
       final url =
-          Uri.parse('http://127.0.0.1:5000/products/$productId/duplicate');
+          Uri.parse('http://127.0.0.1:5000/user/products/duplicate/$productId');
       final response = await http.post(
         url,
         headers: {'Authorization': 'Bearer $token'},
@@ -298,16 +301,16 @@ Future<void> _deleteProduct(int userProductId, String token) async {
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    if (response.statusCode == 200 || response.statusCode == 204) {
-      print("Produit supprimé avec succès.");
-      // Appeler une méthode pour mettre à jour la liste des produits
-      _fetchUserProducts();
-    } else if (response.statusCode == 404) {
-      print("Produit introuvable (Code HTTP : 404).");
-    } else {
-      print(
-          "Erreur lors de la suppression du produit (Code HTTP : ${response.statusCode}).");
-    }
+   if (response.statusCode == 200 || response.statusCode == 204) {
+  print("Produit supprimé avec succès.");
+  _fetchUserProducts();
+} else if (response.statusCode == 404) {
+  print("Produit introuvable (Code HTTP : 404).");
+} else {
+  print(
+      "Erreur lors de la suppression (Code HTTP : ${response.statusCode}). Réponse : ${response.body}");
+}
+
   } catch (e) {
     print("Erreur lors de la suppression du produit : $e");
   }
@@ -416,6 +419,20 @@ Future<void> _deleteProduct(int userProductId, String token) async {
     return await storage.read(key: 'auth_token');
   }
 
+
+
+String _formatDate(String? date) {
+  if (date == null) return "Inconnu";
+
+  try {
+    // Définir le format de la chaîne de date
+    final parsedDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parse(date, true);
+    // Retourner la date formatée
+    return DateFormat('dd/MM/yyyy').format(parsedDate);
+  } catch (e) {
+    return "Invalide"; // En cas d'erreur
+  }
+}
   @override
   Widget build(BuildContext context) {
     
@@ -464,7 +481,11 @@ Future<void> _deleteProduct(int userProductId, String token) async {
                             child: ListTile(
                               title: Text(item['name_fr'] ?? "Nom inconnu"),
                               subtitle: Text(
-                                  "Code: ${item['barcode'] ?? "Inconnu"}"),
+  "DLC: ${_formatDate(item['dlc'])}",
+),
+
+
+
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -485,6 +506,31 @@ Future<void> _deleteProduct(int userProductId, String token) async {
                         },
                       ),
               ),
+               Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _scanBarcode,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightBlueAccent,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                ),
+                child: const Text("Scanner un produit",
+                    style: TextStyle(fontSize: 16)),
+              ),
+              ElevatedButton(
+                onPressed: _addManualProduct,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                ),
+                child: const Text("Ajouter manuellement",
+                    style: TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
             ],
           );
         },

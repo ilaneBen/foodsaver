@@ -224,16 +224,56 @@ Future<void> _fetchUserProducts() async {
 
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
-    String? dlc;
+    if (!mounted) return "Error: Composant not mounted";
+    DateTime? selectedDate;
+    TextEditingController _dateController = TextEditingController();
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Saisir la DLC"),
-          content: TextField(
-            decoration: const InputDecoration(labelText: "DLC (yyyy-mm-dd)"),
-            onChanged: (value) => dlc = value,
+          backgroundColor: Colors.white,
+          title: const Text("Entrer la DLC", style: TextStyle(color: Colors.black)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                icon: const Icon(Icons.calendar_today),
+                label: const Text("Sélectionner la date"),
+                onPressed: () async {
+                  final DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null && mounted) {
+                    setState(() {
+                      selectedDate = pickedDate;
+                      _dateController.text = "${pickedDate.day}/${pickedDate.month.toString().padLeft(2,'0')}/${pickedDate.year}";
+                    });
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightBlueAccent,
+                  textStyle: const TextStyle(fontSize: 16),
+                ),
+              ),
+              Padding(
+                key: ValueKey(selectedDate),
+                padding: const EdgeInsets.only(top: 10),
+                child: TextField(
+                  controller: _dateController,
+                  decoration: InputDecoration(
+                    labelText: "Date sélectionnée:",
+                    filled: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30))
+                  ),
+                  readOnly: true,
+                  enabled: false,
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -244,7 +284,7 @@ Future<void> _fetchUserProducts() async {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(dlc);
+                Navigator.of(context).pop(selectedDate);
               },
               child: const Text("Valider"),
             ),
@@ -253,7 +293,7 @@ Future<void> _fetchUserProducts() async {
       },
     );
 
-    return dlc;
+    return "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2,'0')}-${selectedDate!.day}";
   }
 
 //fonction de duplication et suppression des produits
@@ -286,37 +326,43 @@ Future<void> _fetchUserProducts() async {
     }
   }
 
-Future<void> _deleteProduct(int userProductId, String token) async {
-  if (userProductId == null || token.isEmpty) {
+Future<void> _deleteProduct(String productId) async {
+  final storage = const FlutterSecureStorage();
+  final token = await storage.read(key: 'auth_token');
+
+  if (token == null) {
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
+
+  if (productId == null || productId =="") {
     print("Produit ID ou Token manquant.");
     return;
   }
 
   try {
-    print('Suppression du produit: $userProductId avec le token: $token');
+    print('Suppression du produit: $productId avec le token: $token');
 
-    final url = Uri.parse('http://127.0.0.1:5000/user/products/$userProductId');
+    final url = Uri.parse('http://127.0.0.1:5000/user/products/$productId');
     final response = await http.delete(
       url,
       headers: {'Authorization': 'Bearer $token'},
     );
 
-   if (response.statusCode == 200 || response.statusCode == 204) {
-  print("Produit supprimé avec succès.");
-  _fetchUserProducts();
-} else if (response.statusCode == 404) {
-  print("Produit introuvable (Code HTTP : 404).");
-} else {
-  print(
-      "Erreur lors de la suppression (Code HTTP : ${response.statusCode}). Réponse : ${response.body}");
-}
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      print("Produit supprimé avec succès.");
+      _fetchUserProducts();
+    } else if (response.statusCode == 404) {
+      print("Produit introuvable (Code HTTP : 404).");
+    } else {
+      print(
+          "Erreur lors de la suppression (Code HTTP : ${response.statusCode}). Réponse : ${response.body}");
+    }
 
   } catch (e) {
     print("Erreur lors de la suppression du produit : $e");
   }
 }
-
-
 
 //ajout manuel d'un produit
   Future<void> _addManualProduct() async {
@@ -370,69 +416,73 @@ Future<void> _deleteProduct(int userProductId, String token) async {
 
 //ajout via scan 
   void _scanBarcode() async {
-    if (!mounted) return;
+    // if (!mounted) return;
 
-    await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => MobileScanner(
-        onDetect: (barcodeCapture) {
-        //   if (barcodeCapture.barcodes.isNotEmpty) {
-        //     final barcode = barcodeCapture.barcodes.first;
-        //     if (barcode.rawValue != null && mounted) {
-              _handleProductSubmission(
-                barcode: '3274080005003',
+    // await Navigator.of(context).push(MaterialPageRoute(
+    //   builder: (_) => MobileScanner(
+    //     onDetect: (barcodeCapture) {
+    //       if (barcodeCapture.barcodes.isNotEmpty) {
+    //         final barcode = barcodeCapture.barcodes.first;
+    //         if (barcode.rawValue != null && mounted) {
+    //           _handleProductSubmission(
+    //             barcode: barcode.rawValue!,
+    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
+    //             categories: null,
+    //             brand: null,
+    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
+    //           );
+    //           Navigator.of(context, rootNavigator: true).pop();
+    //         }
+    //       }
+    //     },
+    //   ),
+    // ));
+    _handleProductSubmission(
+                barcode: "8594001022038",
                 nameFr: "", // Remplir avec un nom par défaut si nécessaire
                 categories: null,
                 brand: null,
                 dlc: "", // Remplir avec une DLC par défaut si nécessaire
               );
-        //       Navigator.of(context, rootNavigator: true).pop();
-        //     }
-        //   }
-        },
-      ),
-    ));
   }
 
 //pop up de confirmation
-  Future<void> _showSuccessDialog(String message) async {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Succès"),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
-  }
+Future<void> _showSuccessDialog(String message) async {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Succès"),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("OK"),
+          ),
+        ],
+      );
+    },
+  );
+}
 
-
-  Future<String?> _getToken() async {
-      final storage = const FlutterSecureStorage();
-
-    return await storage.read(key: 'auth_token');
-  }
-
-
+Future<String?> _getToken() async {
+  final storage = const FlutterSecureStorage();
+  return await storage.read(key: 'auth_token');
+}
 
 String _formatDate(String? date) {
   if (date == null) return "Inconnu";
 
   try {
     // Définir le format de la chaîne de date
-    final parsedDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parse(date, true);
+    final parsedDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss").parse(date, true);
     // Retourner la date formatée
     return DateFormat('dd/MM/yyyy').format(parsedDate);
   } catch (e) {
     return "Invalide"; // En cas d'erreur
   }
 }
+
   @override
   Widget build(BuildContext context) {
     
@@ -474,17 +524,12 @@ String _formatDate(String? date) {
                         itemCount: scannedProducts.length,
                         itemBuilder: (context, index) {
                           final item = scannedProducts[index];
-
                           return Card(
                             margin: const EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 16.0),
                             child: ListTile(
                               title: Text(item['name_fr'] ?? "Nom inconnu"),
-                              subtitle: Text(
-  "DLC: ${_formatDate(item['dlc'])}",
-),
-
-
+                              subtitle: Text("DLC: ${_formatDate(item['dlc'])}",),
 
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -497,7 +542,7 @@ String _formatDate(String? date) {
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () =>
-                                        _deleteProduct(item['id'], token!),
+                                        _deleteProduct(item['id'].toString()),
                                   ),
                                 ],
                               ),
@@ -507,28 +552,28 @@ String _formatDate(String? date) {
                       ),
               ),
                Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: _scanBarcode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightBlueAccent,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                ),
-                child: const Text("Scanner un produit",
-                    style: TextStyle(fontSize: 16)),
-              ),
-              ElevatedButton(
-                onPressed: _addManualProduct,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                ),
-                child: const Text("Ajouter manuellement",
-                    style: TextStyle(fontSize: 16)),
-              ),
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: _scanBarcode,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightBlueAccent,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    ),
+                    child: const Text("Scanner un produit",
+                        style: TextStyle(fontSize: 16)),
+                  ),
+                  ElevatedButton(
+                    onPressed: _addManualProduct,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    ),
+                    child: const Text("Ajouter manuellement",
+                        style: TextStyle(fontSize: 16)),
+                  ),
             ],
           ),
             ],

@@ -116,9 +116,10 @@ Future<void> _fetchUserProducts() async {
                 "Erreur lors de la récupération des données depuis OpenFoodFacts.");
           }
         }
+      }
 
-        // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
-        final response = await http.post(
+      // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
+      final response = await http.post(
           productsUrl,
           headers: {
             'Content-Type': 'application/json',
@@ -193,56 +194,16 @@ Future<void> _fetchUserProducts() async {
 
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
-    if (!mounted) return "Error: Composant not mounted";
-    DateTime? selectedDate;
-    TextEditingController _dateController = TextEditingController();
+    String? dlc;
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text("Entrer la DLC", style: TextStyle(color: Colors.black)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.calendar_today),
-                label: const Text("Sélectionner la date"),
-                onPressed: () async {
-                  final DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2100),
-                  );
-                  if (pickedDate != null && mounted) {
-                    setState(() {
-                      selectedDate = pickedDate;
-                      _dateController.text = "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightBlueAccent,
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
-              ),
-              Padding(
-                key: ValueKey(selectedDate),
-                padding: const EdgeInsets.only(top: 10),
-                child: TextField(
-                  controller: _dateController,
-                  decoration: InputDecoration(
-                    labelText: "Date sélectionnée:",
-                    filled: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30))
-                  ),
-                  readOnly: true,
-                  enabled: false,
-                ),
-              ),
-            ],
+          title: const Text("Saisir la DLC"),
+          content: TextField(
+            decoration: const InputDecoration(labelText: "DLC (dd-mm-yyyy)"),
+            onChanged: (value) => dlc = value,
           ),
           actions: [
             TextButton(
@@ -253,7 +214,7 @@ Future<void> _fetchUserProducts() async {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(selectedDate);
+                Navigator.of(context).pop(dlc);
               },
               child: const Text("Valider"),
             ),
@@ -262,7 +223,7 @@ Future<void> _fetchUserProducts() async {
       },
     );
 
-    return "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}";
+    return dlc;
   }
 
 //fonction de duplication et suppression des produits
@@ -313,7 +274,7 @@ Future<void> _fetchUserProducts() async {
 
       if (response.statusCode == 204) {
         print("Produit supprimé avec succès.");
-        _fetchUserProducts();
+       _fetchUserProducts();
       } else {
         print(
             "Erreur lors de la suppression du produit (Code HTTP : ${response.statusCode}).");
@@ -377,32 +338,25 @@ Future<void> _fetchUserProducts() async {
   void _scanBarcode() async {
     if (!mounted) return;
 
-    // await Navigator.of(context).push(MaterialPageRoute(
-    //   builder: (_) => MobileScanner(
-    //     onDetect: (barcodeCapture) {
-    //       if (barcodeCapture.barcodes.isNotEmpty) {
-    //         final barcode = barcodeCapture.barcodes.first;
-    //         if (barcode.rawValue != null && mounted) {
-    //           _handleProductSubmission(
-    //             barcode: barcode.rawValue!,
-    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
-    //             categories: null,
-    //             brand: null,
-    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
-    //           );
-    //           Navigator.of(context, rootNavigator: true).pop();
-    //         }
-    //       }
-    //     },
-    //   ),
-    // ));
-    _handleProductSubmission(
-                barcode: "8594001022038",
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MobileScanner(
+        onDetect: (barcodeCapture) {
+          if (barcodeCapture.barcodes.isNotEmpty) {
+            final barcode = barcodeCapture.barcodes.first;
+            if (barcode.rawValue != null && mounted) {
+              _handleProductSubmission(
+                barcode: barcode.rawValue!,
                 nameFr: "", // Remplir avec un nom par défaut si nécessaire
                 categories: null,
                 brand: null,
                 dlc: "", // Remplir avec une DLC par défaut si nécessaire
               );
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+          }
+        },
+      ),
+    ));
   }
 
 //pop up de confirmation
@@ -504,4 +458,3 @@ Future<void> _fetchUserProducts() async {
       ),
     );
   }
-}

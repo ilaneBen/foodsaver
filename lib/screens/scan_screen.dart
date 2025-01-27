@@ -116,10 +116,9 @@ Future<void> _fetchUserProducts() async {
                 "Erreur lors de la récupération des données depuis OpenFoodFacts.");
           }
         }
-      }
 
-      // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
-      final response = await http.post(
+        // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
+        final response = await http.post(
           productsUrl,
           headers: {
             'Content-Type': 'application/json',
@@ -194,16 +193,56 @@ Future<void> _fetchUserProducts() async {
 
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
-    String? dlc;
+    if (!mounted) return "Error: Composant not mounted";
+    DateTime? selectedDate;
+    TextEditingController _dateController = TextEditingController();
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Saisir la DLC"),
-          content: TextField(
-            decoration: const InputDecoration(labelText: "DLC (dd-mm-yyyy)"),
-            onChanged: (value) => dlc = value,
+          backgroundColor: Colors.white,
+          title: const Text("Entrer la DLC", style: TextStyle(color: Colors.black)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                icon: const Icon(Icons.calendar_today),
+                label: const Text("Sélectionner la date"),
+                onPressed: () async {
+                  final DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null && mounted) {
+                    setState(() {
+                      selectedDate = pickedDate;
+                      _dateController.text = "${pickedDate.day}/${pickedDate.month.toString().padLeft(2,'0')}/${pickedDate.year}";
+                    });
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightBlueAccent,
+                  textStyle: const TextStyle(fontSize: 16),
+                ),
+              ),
+              Padding(
+                key: ValueKey(selectedDate),
+                padding: const EdgeInsets.only(top: 10),
+                child: TextField(
+                  controller: _dateController,
+                  decoration: InputDecoration(
+                    labelText: "Date sélectionnée:",
+                    filled: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30))
+                  ),
+                  readOnly: true,
+                  enabled: false,
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -214,7 +253,7 @@ Future<void> _fetchUserProducts() async {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(dlc);
+                Navigator.of(context).pop(selectedDate);
               },
               child: const Text("Valider"),
             ),
@@ -223,7 +262,7 @@ Future<void> _fetchUserProducts() async {
       },
     );
 
-    return dlc;
+    return "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2,'0')}-${selectedDate!.day}";
   }
 
 //fonction de duplication et suppression des produits
@@ -336,27 +375,34 @@ Future<void> _fetchUserProducts() async {
 
 //ajout via scan 
   void _scanBarcode() async {
-    if (!mounted) return;
+    // if (!mounted) return;
 
-    await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => MobileScanner(
-        onDetect: (barcodeCapture) {
-          if (barcodeCapture.barcodes.isNotEmpty) {
-            final barcode = barcodeCapture.barcodes.first;
-            if (barcode.rawValue != null && mounted) {
-              _handleProductSubmission(
-                barcode: barcode.rawValue!,
+    // await Navigator.of(context).push(MaterialPageRoute(
+    //   builder: (_) => MobileScanner(
+    //     onDetect: (barcodeCapture) {
+    //       if (barcodeCapture.barcodes.isNotEmpty) {
+    //         final barcode = barcodeCapture.barcodes.first;
+    //         if (barcode.rawValue != null && mounted) {
+    //           _handleProductSubmission(
+    //             barcode: barcode.rawValue!,
+    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
+    //             categories: null,
+    //             brand: null,
+    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
+    //           );
+    //           Navigator.of(context, rootNavigator: true).pop();
+    //         }
+    //       }
+    //     },
+    //   ),
+    // ));
+    _handleProductSubmission(
+                barcode: "8594001022038",
                 nameFr: "", // Remplir avec un nom par défaut si nécessaire
                 categories: null,
                 brand: null,
                 dlc: "", // Remplir avec une DLC par défaut si nécessaire
               );
-              Navigator.of(context, rootNavigator: true).pop();
-            }
-          }
-        },
-      ),
-    ));
   }
 
 //pop up de confirmation
@@ -458,3 +504,4 @@ Future<void> _fetchUserProducts() async {
       ),
     );
   }
+}

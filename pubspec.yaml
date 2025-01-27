@@ -41,6 +41,8 @@ dependencies:
   http: ^1.2.2
   mobile_scanner: ^6.0.2
   simple_barcode_scanner: ^0.2.5
+  loading_overlay: ^0.4.2
+  rflutter_alert: ^2.0.4
   
 
 dev_dependencies:

@@ -3,21 +3,115 @@ from . import db
 from .models import Product, UserProduct
 # from datetime import date
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import requests
 
 product = Blueprint("product", __name__)
+
+@product.route("/products/search", methods=["GET"])
+@jwt_required()
+def search_products():
+    """
+    Recherche des produits par code-barres ou nom en français.
+    """
+    barcode = request.args.get("barcode")
+    name_fr = request.args.get("name_fr")
+
+    if not barcode and not name_fr:
+        return jsonify({"msg": "Veuillez fournir un 'barcode' ou un 'name_fr'"}), 400
+
+    # Recherche par code-barres si fourni
+    if barcode:
+        product = Product.query.filter_by(barcode=barcode).first()
+    else:
+        product = Product.query.filter_by(name_fr=name_fr).first()
+
+    if product:
+        return jsonify({"product": product.serialize()}), 200
+    else:
+        return jsonify({"msg": "Produit introuvable."}), 404    
+
 
 @product.route("/products", methods=["POST"])
 @jwt_required()
 def add_product():
-    data = request.get_json()
-    if not data["name"] or not data["img_url"]:
-        return jsonify({"msg": "Bad name or img_url"}), 400
-    # Étape 1 : Ajouter le produit à la table Product
-    new_product = Product(name=data["name"], img_url=data["img_url"])
-    db.session.add(new_product)
-    db.session.commit()  # On commite pour enregistrer le produit dans la base de données
+    try:
+        data = request.get_json()
 
-    return new_product.serialize(), 201
+        # Vérifiez que le champ obligatoire est présent
+        name_fr = data.get("name_fr")
+        if not name_fr:
+            return jsonify({"msg": "The field 'name_fr' is required."}), 400
+
+        # Traduire automatiquement si nécessaire
+        name_eng = data.get("name_eng")
+        if not name_eng:
+            name_eng = translate_to_english(name_fr)
+
+        # Vérifier si un produit avec ce code-barres existe déjà
+        barcode = data.get("barcode")
+        if barcode:
+            existing_product = Product.query.filter_by(barcode=barcode).first()
+            if existing_product:
+                return jsonify({
+                    "msg": "Product with this barcode already exists.",
+                    "product": existing_product.serialize()
+                }), 409
+
+        # Création d'un nouvel objet produit
+        new_product = Product(
+            name_eng=name_eng,
+            name_fr=name_fr,
+            img_url=data.get("img_url"),
+            barcode=barcode,
+            brand=data.get("brand"),
+            categories=data.get("categories")
+        )
+
+        # Ajouter et valider
+        db.session.add(new_product)
+        db.session.flush()  # Générer l'ID sans valider les changements
+        product_id = new_product.id  # Récupérer l'ID généré
+        db.session.commit()  # Valider l'ajout
+
+        print(f"Produit créé avec l'ID : {product_id}")
+
+        return jsonify({
+            "msg": "Product added successfully",
+            "id": product_id,
+            "product": new_product.serialize()
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": f"An error occurred: {str(e)}"}), 500
+
+
+def translate_to_english(text):
+    """
+    Traduit le texte en anglais en utilisant l'API Google Translate.
+    """
+    try:
+        url = "https://translate.googleapis.com/translate_a/single"
+        params = {
+            "client": "gtx",
+            "sl": "fr",
+            "tl": "en",
+            "dt": "t",
+            "q": text
+        }
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            # L'API retourne une liste imbriquée contenant la traduction
+            translation = response.json()[0][0][0]
+            return translation
+        else:
+            print(f"Erreur de traduction: {response.status_code}")
+            return None  # Retourne None si la traduction échoue
+    except Exception as e:
+        print(f"Erreur lors de l'appel à l'API de traduction: {e}")
+        return None  # Retourne None si une erreur survient
+
+
 
 @product.route("/products", methods=["GET"])
 @jwt_required()
@@ -30,38 +124,52 @@ def get_products():
 def add_user_product():
     data = request.get_json()
 
-    # Assurez-vous que l'utilisateur a fourni un produit_id et un dlc
-    if not data.get("product_id") or not data.get("dlc"):
-        return jsonify({"msg": "Missing product_id or dlc"}), 400
-    
-    # Récupérer l'ID de l'utilisateur à partir du token JWT
     user_id = get_jwt_identity()
 
-    # Vérifier que le produit existe dans la base de données
+    # Vérifier les champs requis
+    if not data.get("product_id") or not data.get("dlc"):
+        return jsonify({"msg": "product_id et dlc sont obligatoires"}), 400
+
+    # Vérifier si le produit existe
     product = Product.query.get(data["product_id"])
     if not product:
-        return jsonify({"msg": "Product not found"}), 404
+        return jsonify({"msg": "Produit introuvable"}), 404
 
-    # Créer une nouvelle entrée dans la table UserProduct
+    # Ajouter le produit à user/products
     new_user_product = UserProduct(
-        user_id=user_id,  # Utiliser l'ID de l'utilisateur du token JWT
-        product_id=data["product_id"],  # ID du produit fourni dans le corps de la requête
-        dlc=data["dlc"],  # Date limite de consommation fournie
+        user_id=user_id,
+        product_id=data["product_id"],
+        dlc=data["dlc"],
     )
-    
-    # Ajouter l'entrée dans la base de données et valider
     db.session.add(new_user_product)
     db.session.commit()
 
-    return jsonify({
-        "msg": "Product added successfully",
-        "product": product.serialize(),
-        "dlc": data["dlc"]
-    }), 201
+    return jsonify({"msg": "Produit ajouté avec succès à user/products"}), 201
 
 @product.route("/user/products", methods=["GET"])
 @jwt_required()
 def get_user_products():
-    user_id = get_jwt_identity()
-    user_products = UserProduct.query.filter_by(user_id=user_id).all()
-    return jsonify([user_product.serialize() for user_product in user_products]), 200
+    """
+    Récupérer les produits associés à l'utilisateur connecté.
+    """
+    user_id = get_jwt_identity()  # Récupérer l'ID de l'utilisateur connecté à partir du token
+
+    try:
+        # Filtrer les produits associés à l'utilisateur
+        user_products = UserProduct.query.filter_by(user_id=user_id).all()
+
+        if not user_products:
+            return jsonify({"msg": "Aucun produit trouvé pour cet utilisateur."}), 404
+
+        # Sérialiser les produits et retourner la réponse
+        return jsonify([{
+            "id": user_product.id,
+            "product_id": user_product.product_id,
+            "name_fr": user_product.product.name_fr,  # Supposez que vous avez une relation avec `Product`
+            "dlc": user_product.dlc,
+            "brand": user_product.product.brand,
+            "categories": user_product.product.categories
+        } for user_product in user_products]), 200
+
+    except Exception as e:
+        return jsonify({"msg": f"Une erreur s'est produite : {str(e)}"}), 500

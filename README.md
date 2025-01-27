@@ -1,130 +1,135 @@
-# Connected Fridge Flutter Frontend
+# Connected Fridge - README General
 
-This repository contains the frontend for the **Connected Fridge** project, developed using Flutter. The application allows users to interact with a backend system, enabling features such as login, scanning items, and managing fridge content.
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Project Structure](#project-structure)
-- [Configuration](#configuration)
-- [Running the App](#running-the-app)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+Bienvenue dans le projet **Connected Fridge**, une application permettant de gérer vos aliments de manière intuitive et intelligente grâce à une interface utilisateur conviviale et une API performante. Ce document vous guidera sur la façon de configurer et d'exécuter les parties **backend** et **frontend** de ce projet, qui sont regroupées dans un seul dépôt.
 
 ---
 
-## Features
+## Table des Matières
 
-- User authentication (login functionality).
-- Integration with a backend API.
-- Scanning functionality for managing fridge content.
-- Interactive and responsive UI.
-- Loading indicators and error handling.
-
----
-
-## Requirements
-
-- **Flutter SDK**: 3.x or later
-- **Dart SDK**: 2.x or later
-- A running backend server for API interactions ([backend repository link](#)).
-
-### Dependencies
-The following dependencies are used in this project:
-
-- `http`: For API communication.
-- `loading_overlay`: For showing loading indicators.
-- `provider`: For state management (if applicable).
+1. [Prérequis](#prérequis)
+2. [Configuration Backend](#configuration-backend)
+   - [Installation et Lancement](#installation-et-lancement)
+   - [Utilisation de Docker](#utilisation-de-docker)
+3. [Configuration Frontend](#configuration-frontend)
+   - [Installation et Exécution](#installation-et-exécution)
+4. [Contribuer](#contribuer)
+5. [License](#license)
 
 ---
 
-## Installation
+## Prérequis
 
-### Step 1: Clone the Repository
-```bash
-$ git clone https://github.com/ilaneBen/foodsaver.git
-$ cd foodsaver
-```
+Avant de commencer, assurez-vous d'avoir les éléments suivants installés sur votre machine :
 
-### Step 2: Install Dependencies
-```bash
-$ flutter pub get
-```
+- **Docker** : pour l'exécution et le déploiement des conteneurs backend.
+- **Flutter SDK** : pour exécuter et développer le frontend.
+- **Python 3** : requis pour exécuter le backend 
+- **Git** : pour cloner les dépôts du projet.
 
----
+### Cloner le dépôt
 
-## Project Structure
-
-```plaintext
-lib/
-├── components/            # Reusable widgets and UI components
-├── constants.dart         # App-wide constants (e.g., API URLs)
-├── main.dart              # Entry point of the application
-├── screens/               # Individual screens (e.g., Login, Scan, Home)
-```
+1. **Clonez le dépôt du projet :**
+   ```bash
+   git clone https://github.com/ilaneBen/foodsaver.git
+   ```
 
 ---
 
-## Configuration
+## Configuration Backend
 
-Ensure the backend server is running and accessible. To start the backend server:
-```bash
-$ flask run --host=0.0.0.0 --port=5000
-```
+Le backend est une API REST développée avec Flask. Il se trouve dans le dossier `foodsaver-api` du dépôt et est conteneurisé pour une exécution simple et rapide à l'aide de Docker.
 
+### Installation et Lancement
+
+1. **Accédez au dossier backend :**
+   ```bash
+   cd foodsaver-api
+   ```
+
+2. **Copiez le fichier `.env.example` :**
+   ```bash
+   cp .env.example .env
+   ```
+   Remplissez les variables d'environnement selon vos besoins.
+
+3. **Installez les dépendances (optionnel sans Docker) :**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+### Utilisation de Docker
+
+1. **Revenez à la racine du projet et exécutez Docker Compose :**
+   ```bash
+   docker-compose up --build
+   ```
+
+2. **L'API est disponible sur :**
+   ```
+   http://localhost:5000
+   ```
 
 ---
 
-## Running the App
+## Configuration Frontend
 
-To run the application on a specific device:
+Le frontend est développé avec **Flutter**, offrant une interface utilisateur moderne et responsive. Il se trouve à la racine du dépôt.
 
-### For Web:
-```bash
-$ flutter run -d chrome
-```
+### Installation et Exécution
 
-### For Android:
-```bash
-$ flutter run -d emulator-5554
-```
+1. **Assurez-vous d'être à la racine du projet :**
+   ```bash
+   cd ../
+   ```
 
-### For iOS:
-```bash
-$ flutter run -d <device-id>
-```
+2. **Installez les dépendances Flutter :**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Lancez l'application sur l'appareil de votre choix :**
+
+   - **Pour le web :**
+     ```bash
+     flutter run -d chrome
+     ```
+
+   - **Pour Android :**
+     ```bash
+     flutter run -d emulator-5554
+     ```
+
+   - **Pour iOS :**
+     ```bash
+     flutter run -d <device-id>
+     ```
 
 ---
 
-## Contributing
+## Contribuer
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature-name`).
-3. Commit your changes (`git commit -m 'Add some feature'`).
-4. Push to the branch (`git push origin feature/your-feature-name`).
-5. Open a Pull Request.
+1. **Forkez le dépôt.**
+2. **Créez une nouvelle branche :**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Effectuez vos modifications et committez :**
+   ```bash
+   git commit -m 'Add some feature'
+   ```
+4. **Poussez vos modifications :**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+5. **Ouvrez une Pull Request.**
+
+Merci de contribuer au projet **Connected Fridge** !
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Contact
-
-For inquiries or issues, please contact:
-
-- **Ilane**
-- Email: [your-email@example.com](mailto:your-email@example.com)
-
----
-
-Thank you for contributing to the Connected Fridge project!
+Ce projet est sous licence [MIT](LICENSE).
 

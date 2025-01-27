@@ -1,7 +1,5 @@
 import 'package:connected_fridge/screens/scan_screen.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 import '/screens/home_screen.dart';
 import '/screens/login_screen.dart';
@@ -25,10 +23,10 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: HomeScreen.id,
       routes: {
-        HomeScreen.id: (context) => HomeScreen(),
-        LoginScreen.id: (context) => LoginScreen(),
-        SignUpScreen.id: (context) => SignUpScreen(),
-        WelcomeScreen.id: (context) => WelcomeScreen(),
+        HomeScreen.id: (context) => const HomeScreen(),
+        LoginScreen.id: (context) => const LoginScreen(),
+        SignUpScreen.id: (context) => const SignUpScreen(),
+        WelcomeScreen.id: (context) => const WelcomeScreen(),
         ScanScreen.id: (context) => ScanScreen(onBarcodeScanned: (barcode) {
               // Handle the scanned barcode here
             }),

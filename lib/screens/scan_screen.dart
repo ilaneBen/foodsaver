@@ -5,146 +5,289 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ScanScreen extends StatefulWidget {
-  final Function(String) onBarcodeScanned;
-
   static const String id = 'scan_screen';
+  final Function(String)? onBarcodeScanned;
 
-  const ScanScreen({required this.onBarcodeScanned, Key? key}) : super(key: key);
+  const ScanScreen({super.key, this.onBarcodeScanned});
 
   @override
   _ScanScreenState createState() => _ScanScreenState();
 }
 
-
 class _ScanScreenState extends State<ScanScreen> {
-  List<Map<String, String>> scannedProducts = [];
+  List<Map<String, dynamic>> scannedProducts = [];
 
-  Future<void> _scanBarcode() async {
-    if (!mounted) return;
-    await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => MobileScanner(
-        onDetect: (barcodeCapture) {
-          if (barcodeCapture.barcodes.isNotEmpty) {
-            final barcode = barcodeCapture.barcodes.first;
-            if (barcode.rawValue != null && mounted) {
-              _fetchProductData(barcode.rawValue!);
-              Navigator.of(context, rootNavigator: true).pop();
-            }
-          }
-        },
-      ),
-    ));
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProducts();
   }
 
-  Future<void> _fetchProductData(String barcode) async {
-    if (!mounted) return;
-    final url = Uri.parse('https://world.openfoodfacts.org/api/v0/product/$barcode.json');
-    final response = await http.get(url);
+//Affichage des produits de la table user/products deja en BDD
+Future<void> _fetchUserProducts() async {
+  const storage = FlutterSecureStorage();
+  final token = await storage.read(key: 'auth_token');
+
+  if (token == null) {
+    print("Erreur : Token d'authentification non trouvé.");
+    return;
+  }
+
+  try {
+    final url = Uri.parse('http://127.0.0.1:5000/user/products');
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
 
     if (response.statusCode == 200) {
-      final productData = jsonDecode(response.body);
-      final productName = productData['product']?['product_name'] ?? 'Produit inconnu';
-      final brand = productData['product']?['brands'] ?? 'Marque inconnue';
-      final categories = productData['product']?['categories'] ?? 'Non spécifié';
-      final allergens = productData['product']?['allergens'] ?? 'Aucun';
-      final additives = productData['product']?['additives_tags']?.join(', ') ?? 'Aucun';
-
-      if (mounted) {
-        await _showDlcDialog(barcode, productName, brand, categories, allergens, additives);
-      }
+      final List<dynamic> products = jsonDecode(response.body);
+      setState(() {
+        scannedProducts = products
+            .map((product) => Map<String, dynamic>.from(product))
+            .toList();
+      });
     } else {
-      print("Produit non trouvé.");
+      print(
+          "Erreur lors de la récupération des produits (Code HTTP : ${response.statusCode}).");
+    }
+  } catch (e) {
+    print("Erreur réseau lors de la récupération des produits : $e");
+  }
+}
+
+//fonction de verification et enregistrement des produits dans la bdd
+  Future<void> _handleProductSubmission({
+    required String? barcode,
+    required String nameFr,
+    String? categories,
+    String? brand,
+    required String dlc,
+  }) async {
+    final storage = const FlutterSecureStorage();
+    final token = await storage.read(key: 'auth_token');
+
+    if (token == null) {
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
+
+    try {
+      final searchUrl = Uri.parse('http://127.0.0.1:5000/products/search');
+      final productsUrl = Uri.parse('http://127.0.0.1:5000/products');
+      final userProductsUrl = Uri.parse('http://127.0.0.1:5000/user/products');
+
+      // Rechercher le produit dans la BDD
+      final queryParameters = {
+        if (barcode != null) 'barcode': barcode,
+        if (nameFr.isNotEmpty) 'name_fr': nameFr,
+      };
+
+      final productResponse = await http.get(
+        searchUrl.replace(queryParameters: queryParameters),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      Map<String, dynamic>? product;
+      String? productId;
+
+      if (productResponse.statusCode == 200) {
+        // Produit trouvé dans la BDD
+        final responseData = jsonDecode(productResponse.body);
+        product = responseData['product'];
+        if (product != null && product.containsKey('id')) {
+          productId = product['id'].toString();
+        }
+      } else if (productResponse.statusCode == 404) {
+        // Produit non trouvé, vérifiez OpenFoodFacts si un code-barres est disponible
+        if (barcode != null) {
+          print("Produit inconnu, vérification via OpenFoodFacts.");
+          final openFoodFactsUrl = Uri.parse(
+              'https://world.openfoodfacts.org/api/v0/product/$barcode.json');
+          final openFoodResponse = await http.get(openFoodFactsUrl);
+
+          if (openFoodResponse.statusCode == 200) {
+            final openFoodData = jsonDecode(openFoodResponse.body)['product'];
+            nameFr = openFoodData['product_name'] ?? nameFr;
+            brand = openFoodData['brands'] ?? brand;
+            categories = openFoodData['categories'] ?? categories;
+          } else {
+            print(
+                "Erreur lors de la récupération des données depuis OpenFoodFacts.");
+          }
+        }
+
+        // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
+        final response = await http.post(
+          productsUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'barcode': barcode,
+            'name_fr': nameFr,
+            'categories': categories,
+            'brand': brand,
+          }),
+        );
+
+        if (response.statusCode == 201) {
+          final responseData = jsonDecode(response.body);
+          if (responseData.containsKey('id')) {
+            productId = responseData['id'].toString();
+            print(
+                "Produit ajouté à la base de données avec succès, ID : $productId");
+          } else {
+            print("Erreur : L'ID du produit est absent dans la réponse.");
+            return;
+          }
+        } else {
+          print(
+              "Erreur lors de l'ajout du produit dans la BDD (Code HTTP : ${response.statusCode}).");
+          return;
+        }
+      } else {
+        print(
+            "Erreur lors de la recherche du produit : ${productResponse.body}");
+        return;
+      }
+
+      if (productId == null) {
+        print("Erreur : ID produit non récupéré ou invalide.");
+        return;
+      }
+
+      // Afficher une pop up pour entrer la DLC
+      final selectedDlc = await _promptDlcInput();
+      if (selectedDlc == null) {
+        print("Aucune DLC saisie.");
+        return;
+      }
+
+      // Ajout dans user/products
+      final userProductResponse = await http.post(
+        userProductsUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'product_id': productId,
+          'dlc': selectedDlc,
+        }),
+      );
+
+      if (userProductResponse.statusCode == 201) {
+        print("Produit enregistré avec succès dans user/products.");
+        _showSuccessDialog("Produit ajouté avec succès !");
+      } else {
+        print(
+            "Erreur lors de l'enregistrement dans user/products : ${userProductResponse.body}");
+      }
+    } catch (e) {
+      print("Erreur lors du traitement du produit : $e");
     }
   }
 
-  Future<void> _showDlcDialog(String barcode, String productName, String brand, String categories, String allergens, String additives) async {
-    if (!mounted) return;
-    DateTime? selectedDate;
+
+//pop up pour la saisie de la date de péremption
+  Future<String?> _promptDlcInput() async {
+    String? dlc;
 
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text("Entrer la DLC", style: TextStyle(color: Colors.black)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton(
-                onPressed: () async {
-                  final pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2100),
-                  );
-                  if (pickedDate != null && mounted) {
-                    setState(() {
-                      selectedDate = pickedDate;
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightBlueAccent,
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
-                child: const Text("Sélectionner la date"),
-              ),
-              if (selectedDate != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    "Date sélectionnée: ${selectedDate.toString().split(' ')[0]}",
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                ),
-            ],
+          title: const Text("Saisir la DLC"),
+          content: TextField(
+            decoration: const InputDecoration(labelText: "DLC (dd-mm-yyyy)"),
+            onChanged: (value) => dlc = value,
           ),
           actions: [
             TextButton(
               onPressed: () {
-                if (selectedDate != null && mounted) {
-                  setState(() {
-                    scannedProducts.add({
-                      "code": barcode,
-                      "name": productName,
-                      "brand": brand,
-                      "categories": categories,
-                      "allergens": allergens,
-                      "additives": additives,
-                      "dlc": selectedDate.toString().split(' ')[0],
-                      "date": DateTime.now().toString(),
-                    });
-                  });
-                }
                 Navigator.of(context).pop();
               },
-              child: const Text("Enregistrer", style: TextStyle(color: Colors.lightBlueAccent)),
+              child: const Text("Annuler"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(dlc);
+              },
+              child: const Text("Valider"),
             ),
           ],
         );
       },
     );
+
+    return dlc;
   }
 
-  void _duplicateProduct(int index) {
-    setState(() {
-      final duplicatedProduct = Map<String, String>.from(scannedProducts[index]);
-      scannedProducts.add(duplicatedProduct);
-    });
+//fonction de duplication et suppression des produits
+  Future<void> _duplicateProduct(String productId) async {
+    final storage = const FlutterSecureStorage();
+    final token = await storage.read(key: 'auth_token');
+
+    if (token == null) {
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
+
+    try {
+      final url =
+          Uri.parse('http://127.0.0.1:5000/products/$productId/duplicate');
+      final response = await http.post(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 201) {
+        print("Produit dupliqué avec succès.");
+        _fetchUserProducts();
+      } else {
+        print(
+            "Erreur lors de la duplication du produit (Code HTTP : ${response.statusCode}).");
+      }
+    } catch (e) {
+      print("Erreur lors de la duplication du produit : $e");
+    }
   }
 
-  void _deleteProduct(int index) {
-    setState(() {
-      scannedProducts.removeAt(index);
-    });
+  Future<void> _deleteProduct(String productId) async {
+    final storage = const FlutterSecureStorage();
+    final token = await storage.read(key: 'auth_token');
+
+    if (token == null) {
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
+
+    try {
+      final url = Uri.parse('http://127.0.0.1:5000/products/$productId');
+      final response = await http.delete(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 204) {
+        print("Produit supprimé avec succès.");
+       _fetchUserProducts();
+      } else {
+        print(
+            "Erreur lors de la suppression du produit (Code HTTP : ${response.statusCode}).");
+      }
+    } catch (e) {
+      print("Erreur lors de la suppression du produit : $e");
+    }
   }
 
+//ajout manuel d'un produit
   Future<void> _addManualProduct() async {
     String? productName;
     String? brand;
     String? categories;
-    String? dlc;
 
     await showDialog(
       context: context,
@@ -166,28 +309,19 @@ class _ScanScreenState extends State<ScanScreen> {
                 decoration: const InputDecoration(labelText: "Catégories"),
                 onChanged: (value) => categories = value,
               ),
-              TextField(
-                decoration: const InputDecoration(labelText: "DLC (yyyy-mm-dd)"),
-                onChanged: (value) => dlc = value,
-              ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                if (productName != null && dlc != null) {
-                  setState(() {
-                    scannedProducts.add({
-                      "code": "Manuel",
-                      "name": productName!,
-                      "brand": brand ?? "Non spécifié",
-                      "categories": categories ?? "Non spécifié",
-                      "allergens": "Non spécifié",
-                      "additives": "Non spécifié",
-                      "dlc": dlc!,
-                      "date": DateTime.now().toString(),
-                    });
-                  });
+              onPressed: () async {
+                if (productName != null) {
+                  await _handleProductSubmission(
+                    barcode: null,
+                    nameFr: productName!,
+                    categories: categories,
+                    brand: brand,
+                    dlc: '', // DLC sera demandée plus tard
+                  );
                 }
                 Navigator.of(context).pop();
               },
@@ -199,11 +333,51 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    scannedProducts.clear();
-    super.dispose();
+//ajout via scan 
+  void _scanBarcode() async {
+    if (!mounted) return;
+
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MobileScanner(
+        onDetect: (barcodeCapture) {
+          if (barcodeCapture.barcodes.isNotEmpty) {
+            final barcode = barcodeCapture.barcodes.first;
+            if (barcode.rawValue != null && mounted) {
+              _handleProductSubmission(
+                barcode: barcode.rawValue!,
+                nameFr: "", // Remplir avec un nom par défaut si nécessaire
+                categories: null,
+                brand: null,
+                dlc: "", // Remplir avec une DLC par défaut si nécessaire
+              );
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+          }
+        },
+      ),
+    ));
   }
+
+//pop up de confirmation
+  Future<void> _showSuccessDialog(String message) async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Succès"),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -211,128 +385,76 @@ class _ScanScreenState extends State<ScanScreen> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.lightBlueAccent,
-        title: const Text('Scanner OpenFoodFacts', style: TextStyle(color: Colors.white)),
+        title: const Text('Scanner OpenFoodFacts',
+            style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(25),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              height: 500,
-              width: 300,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/woman_fridge.jpg'),
-                  fit: BoxFit.cover,
+      body: Column(
+        children: [
+          Expanded(
+            child: scannedProducts.isEmpty
+                ? const Center(
+                    child: Text("Aucun produit scanné.",
+                        style: TextStyle(color: Colors.black54, fontSize: 16)),
+                  )
+                : ListView.builder(
+                    itemCount: scannedProducts.length,
+                    itemBuilder: (context, index) {
+                      final item = scannedProducts[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
+                        child: ListTile(
+                          title: Text(item['name_fr'] ?? "Nom inconnu"),
+                          subtitle:
+                              Text("Code: ${item['barcode'] ?? "Inconnu"}"),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.copy),
+                                onPressed: () =>
+                                    _duplicateProduct(item['id'].toString()),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () =>
+                                    _deleteProduct(item['id'].toString()),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _scanBarcode,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.lightBlueAccent,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 ),
+                child: const Text("Scanner un produit",
+                    style: TextStyle(fontSize: 16)),
               ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: scannedProducts.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "Aucun produit scanné.",
-                        style: TextStyle(color: Colors.black54, fontSize: 16),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: scannedProducts.length,
-                      itemBuilder: (context, index) {
-                        final item = scannedProducts[index];
-                        return Card(
-                          color: Colors.white,
-                          margin: const EdgeInsets.symmetric(vertical: 10),
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(15),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                                const SizedBox(height: 5),
-                                Text("Code: ${item['code']}", style: const TextStyle(color: Colors.black54)),
-                                Text("Marque: ${item['brand']}", style: const TextStyle(color: Colors.black54)),
-                                Text("Catégories: ${item['categories']}", style: const TextStyle(color: Colors.black54)),
-                                Text("Allergènes: ${item['allergens']}", style: const TextStyle(color: Colors.black54)),
-                                Text("Additifs: ${item['additives']}", style: const TextStyle(color: Colors.black54)),
-                                Text("DLC: ${item['dlc']}", style: const TextStyle(color: Colors.black54)),
-                                Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        "Scanné le: ${item['date']!.split(' ')[0]}",
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      ElevatedButton(
-                                        onPressed: () => _duplicateProduct(index),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.lightBlueAccent,
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                          textStyle: const TextStyle(fontSize: 12),
-                                        ),
-                                        child: const Text("Dupliquer"),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      ElevatedButton(
-                                        onPressed: () => _deleteProduct(index),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.redAccent,
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                          textStyle: const TextStyle(fontSize: 12),
-                                        ),
-                                        child: const Text("Supprimer"),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _scanBarcode,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightBlueAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.all(15),
-                  ),
-                  child: const Text("Scanner un produit", style: TextStyle(fontSize: 16)),
+              ElevatedButton(
+                onPressed: _addManualProduct,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 ),
-                ElevatedButton(
-                  onPressed: _addManualProduct,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.all(15),
-                  ),
-                  child: const Text("Ajouter manuellement", style: TextStyle(fontSize: 16)),
-                ),
-              ],
-            ),
-          ],
-        ),
+                child: const Text("Ajouter manuellement",
+                    style: TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
-

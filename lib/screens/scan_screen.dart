@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
+import '/constants.dart'; // Vos constantes
 
 class ScanScreen extends StatefulWidget {
   static const String id = 'scan_screen';
@@ -35,7 +36,7 @@ class _ScanScreenState extends State<ScanScreen> {
     }
 
     try {
-      final url = Uri.parse('http://127.0.0.1:5000/user/products');
+      final url = Uri.parse('$apiUrl/user/products');
       final response = await http.get(
         url,
         headers: {'Authorization': 'Bearer $token'},
@@ -76,9 +77,9 @@ class _ScanScreenState extends State<ScanScreen> {
       }
 
       try {
-        final searchUrl = Uri.parse('http://127.0.0.1:5000/products/search');
-        final productsUrl = Uri.parse('http://127.0.0.1:5000/products');
-        final userProductsUrl = Uri.parse('http://127.0.0.1:5000/user/products');
+        final searchUrl = Uri.parse('$apiUrl/products/search');
+        final productsUrl = Uri.parse('$apiUrl/products');
+        final userProductsUrl = Uri.parse('$apiUrl/user/products');
 
         // Rechercher le produit dans la BDD
         final queryParameters = {
@@ -308,7 +309,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
     try {
       final url =
-          Uri.parse('http://127.0.0.1:5000/user/products/duplicate/$productId');
+          Uri.parse('$apiUrl/user/products/duplicate/$productId');
       final response = await http.post(
         url,
         headers: {'Authorization': 'Bearer $token'},
@@ -343,7 +344,7 @@ class _ScanScreenState extends State<ScanScreen> {
     try {
       print('Suppression du produit: $productId avec le token: $token');
 
-      final url = Uri.parse('http://127.0.0.1:5000/user/products/$productId');
+      final url = Uri.parse('$apiUrl/user/products/$productId');
       final response = await http.delete(
         url,
         headers: {'Authorization': 'Bearer $token'},

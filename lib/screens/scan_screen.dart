@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -60,142 +61,138 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   //fonction de verification et enregistrement des produits dans la bdd
-    Future<void> _handleProductSubmission({
-      required String? barcode,
-      required String nameFr,
-      String? categories,
-      String? brand,
-      String? img_url,
-      required String dlc,
-    }) async {
-      final storage = const FlutterSecureStorage();
-      final token = await storage.read(key: 'auth_token');
+  Future<void> _handleProductSubmission({
+    required String? barcode,
+    required String nameFr,
+    String? categories,
+    String? brand,
+    String? img_url,
+    required String dlc,
+  }) async {
+    final storage = const FlutterSecureStorage();
+    final token = await storage.read(key: 'auth_token');
 
-      if (token == null) {
-        print("Erreur : Token d'authentification non trouvé.");
-        return;
-      }
+    if (token == null) {
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
 
-      try {
-        final searchUrl = Uri.parse('http://127.0.0.1:5000/products/search');
-        final productsUrl = Uri.parse('http://127.0.0.1:5000/products');
-        final userProductsUrl = Uri.parse('http://127.0.0.1:5000/user/products');
+    try {
+      final searchUrl = Uri.parse('http://127.0.0.1:5000/products/search');
+      final productsUrl = Uri.parse('http://127.0.0.1:5000/products');
+      final userProductsUrl = Uri.parse('http://127.0.0.1:5000/user/products');
 
-        // Rechercher le produit dans la BDD
-        final queryParameters = {
-          if (barcode != null) 'barcode': barcode,
-          if (nameFr.isNotEmpty) 'name_fr': nameFr,
-        };
+      // Rechercher le produit dans la BDD
+      final queryParameters = {
+        if (barcode != null) 'barcode': barcode,
+        if (nameFr.isNotEmpty) 'name_fr': nameFr,
+      };
 
-        final productResponse = await http.get(
-          searchUrl.replace(queryParameters: queryParameters),
-          headers: {'Authorization': 'Bearer $token'},
-        );
+      final productResponse = await http.get(
+        searchUrl.replace(queryParameters: queryParameters),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-        Map<String, dynamic>? product;
-        String? productId;
+      Map<String, dynamic>? product;
+      String? productId;
 
-        if (productResponse.statusCode == 200) {
-          // Produit trouvé dans la BDD
-          final responseData = jsonDecode(productResponse.body);
-          product = responseData['product'];
-          if (product != null && product.containsKey('id')) {
-            productId = product['id'].toString();
-          }
-        } else if (productResponse.statusCode == 404) {
-          // Produit non trouvé, vérifiez OpenFoodFacts si un code-barres est disponible
-          if (barcode != null) {
-            print("Produit inconnu, vérification via OpenFoodFacts.");
-            final openFoodFactsUrl = Uri.parse(
-                'https://world.openfoodfacts.org/api/v0/product/$barcode.json');
-            final openFoodResponse = await http.get(openFoodFactsUrl);
+      if (productResponse.statusCode == 200) {
+        // Produit trouvé dans la BDD
+        final responseData = jsonDecode(productResponse.body);
+        product = responseData['product'];
+        if (product != null && product.containsKey('id')) {
+          productId = product['id'].toString();
+        }
+      } else if (productResponse.statusCode == 404) {
+        // Produit non trouvé, vérifiez OpenFoodFacts si un code-barres est disponible
+        if (barcode != null) {
+          print("Produit inconnu, vérification via OpenFoodFacts.");
+          final openFoodFactsUrl = Uri.parse(
+              'https://world.openfoodfacts.org/api/v0/product/$barcode.json');
+          final openFoodResponse = await http.get(openFoodFactsUrl);
 
-            if (openFoodResponse.statusCode == 200) {
-              final openFoodData = jsonDecode(openFoodResponse.body)['product'];
-              nameFr = openFoodData['product_name'] ?? nameFr;
-              brand = openFoodData['brands'] ?? brand;
-              img_url = openFoodData['image_front_url'] ?? img_url;
-              categories = openFoodData['categories'] ?? categories;
-            } else {
-              print(
-                  "Erreur lors de la récupération des données depuis OpenFoodFacts.");
-            }
-          }
-
-          // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
-          final response = await http.post(
-            productsUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'barcode': barcode,
-              'name_fr': nameFr,
-              'categories': categories,
-              'brand': brand,
-            }),
-          );
-
-          if (response.statusCode == 201) {
-            final responseData = jsonDecode(response.body);
-            if (responseData.containsKey('id')) {
-              productId = responseData['id'].toString();
-              print(
-                  "Produit ajouté à la base de données avec succès, ID : $productId");
-            } else {
-              print("Erreur : L'ID du produit est absent dans la réponse.");
-              return;
-            }
+          if (openFoodResponse.statusCode == 200) {
+            final openFoodData = jsonDecode(openFoodResponse.body)['product'];
+            nameFr = openFoodData['product_name'] ?? nameFr;
+            brand = openFoodData['brands'] ?? brand;
+            img_url = openFoodData['image_front_url'] ?? img_url;
+            categories = openFoodData['categories'] ?? categories;
           } else {
             print(
-                "Erreur lors de l'ajout du produit dans la BDD (Code HTTP : ${response.statusCode}).");
+                "Erreur lors de la récupération des données depuis OpenFoodFacts.");
+          }
+        }
+
+        // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
+        final response = await http.post(
+          productsUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'barcode': barcode,
+            'name_fr': nameFr,
+            'categories': categories,
+            'brand': brand,
+          }),
+        );
+
+        if (response.statusCode == 201) {
+          final responseData = jsonDecode(response.body);
+          if (responseData.containsKey('id')) {
+            productId = responseData['id'].toString();
+            print(
+                "Produit ajouté à la base de données avec succès, ID : $productId");
+          } else {
+            print("Erreur : L'ID du produit est absent dans la réponse.");
             return;
           }
         } else {
           print(
-              "Erreur lors de la recherche du produit : ${productResponse.body}");
+              "Erreur lors de l'ajout du produit dans la BDD (Code HTTP : ${response.statusCode}).");
           return;
         }
+      } else {
+        print(
+            "Erreur lors de la recherche du produit : ${productResponse.body}");
+        return;
+      }
 
-        if (productId == null) {
-          print("Erreur : ID produit non récupéré ou invalide.");
-          return;
-        }
+      if (productId == null) {
+        print("Erreur : ID produit non récupéré ou invalide.");
+        return;
+      }
 
-        // Afficher une pop up pour entrer la DLC
-        final selectedDlc = await _promptDlcInput();
+      // Afficher une pop up pour entrer la DLC
+      final selectedDlc = await _promptDlcInput();
     
-    // Vérifie si une valeur a été saisie
-    if (selectedDlc == null) {
-      // Affiche une modal si aucune valeur n'a été saisie
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Erreur"),
-            content: Text("Aucune DLC saisie."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Ferme la modal
-                    _promptDlcInput(); // Relance la sélection DLC
+      // Vérifie si une valeur a été saisie
+      if (selectedDlc == null) {
+        // Affiche une modal si aucune valeur n'a été saisie
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Erreur"),
+              content: Text("Aucune DLC saisie."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Ferme la modal
+                      _promptDlcInput(); // Relance la sélection DLC
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+        return; // Arrête l'exécution si la valeur est null
+      }
 
-                },
-                child: Text("OK"),
-              ),
-            ],
-          );
-        },
-      );
-      return; // Arrête l'exécution si la valeur est null
-    }
-
-    // Si une valeur est saisie, vous pouvez poursuivre votre logique
-    print("DLC sélectionnée : $selectedDlc");
-    // Ajoutez ici les actions nécessaires avec `selectedDlc`
-
-    
+      // Si une valeur est saisie, vous pouvez poursuivre votre logique
+      print("DLC sélectionnée : $selectedDlc");
 
         // Ajout dans user/products
         final userProductResponse = await http.post(

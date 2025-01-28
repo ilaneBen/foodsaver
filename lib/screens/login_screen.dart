@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final bool _saving = false;
-  final String _errorMessage = '';
+  String _errorMessage = '';
 
   Future<void> _login() async {
     final email = _emailController.text;

@@ -1,7 +1,7 @@
 """Add barcode to Product
 
 Revision ID: 7f916b3844ae
-Revises: 4e9e0270f495
+Revises: f2fbe88d0bff
 Create Date: 2025-01-22 09:18:31.681300
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '7f916b3844ae'
-down_revision = '4e9e0270f495'
+down_revision = 'f2fbe88d0bff'
 branch_labels = None
 depends_on = None
 

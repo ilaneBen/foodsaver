@@ -1,4 +1,4 @@
-"""add tocken block list
+"""Create table token block list
 
 Revision ID: 3fe8851716a2
 Revises: b90295b5ee1f

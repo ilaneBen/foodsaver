@@ -44,6 +44,7 @@ dependencies:
   loading_overlay: ^0.4.2
   rflutter_alert: ^2.0.4
   flutter_secure_storage: ^9.2.4
+  intl: ^0.20.2
   
 
 dev_dependencies:

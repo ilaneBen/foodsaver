@@ -1,7 +1,7 @@
-"""ajout brand et categorie a produit
+"""Add brand and categorie to produit
 
 Revision ID: 3f995b3c419e
-Revises: 017084e03436
+Revises: db906cb55356
 Create Date: 2025-01-23 14:35:55.634910
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '3f995b3c419e'
-down_revision = '017084e03436'
+down_revision = 'db906cb55356'
 branch_labels = None
 depends_on = None
 

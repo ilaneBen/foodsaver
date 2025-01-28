@@ -82,17 +82,16 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(25),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Image.asset(
                   'assets/images/welcome.png',
-                  height: MediaQuery.of(context).size.height - 403,
+                  width: MediaQuery.of(context).size.width - 585,
                 ),
-                Expanded(
-                  child: Padding(
+                Padding(
                     padding:
-                        const EdgeInsets.only(top: 20.0, right: 15, left: 15),
+                        const EdgeInsets.only(top: 20.0, right: 20, left: 15),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -185,8 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                )
-              ],
+                ],
             ),
           ),
         ),

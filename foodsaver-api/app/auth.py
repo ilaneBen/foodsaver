@@ -22,38 +22,24 @@ def login():
     return jsonify(access_token=access_token)
 
 
-# @auth.route("/register", methods=["POST"])
-# def register():
-#     email = request.json.get("email", None)
-#     password = request.json.get("password", None)
-
-#     if email is None or password is None:
-#         return jsonify({"msg": "Missing email or password"}), 400 # return 400 Bad request HTTP status code
-#     check_user = User.query.filter_by(email=email).first()
-#     if check_user:
-#         return jsonify({"msg": "Email already exists"}), 400
-    
-#     user = User(email=email, password=password)
-#     db.session.add(user)
-#     db.session.commit()
-
-#     return jsonify({"msg": "User created successfully"}), 201
-
-@app.route('/register', methods=['POST'])
+@auth.route("/register", methods=["POST"])
 def register():
-    # Vérifier que le Content-Type est bien application/json
-    if request.content_type != 'application/json':
-        return jsonify({'error': 'Content-Type must be application/json'}), 415
+    email = request.json.get("email", None)
+    password = request.json.get("password", None)
 
-    # Récupérer les données JSON
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'Invalid JSON data'}), 400
+    if email is None or password is None:
+        return jsonify({"msg": "Missing email or password"}), 400 # return 400 Bad request HTTP status code
+    check_user = User.query.filter_by(email=email).first()
+    if check_user:
+        return jsonify({"msg": "Email already exists"}), 400
+    
+    user = User(email=email, password=password)
+    db.session.add(user)
+    db.session.commit()
 
-    email = data.get('email')
-    password = data.get('password')
+    return jsonify({"msg": "User created successfully"}), 201
 
-    return jsonify({'message': f'User {email} registered successfully'}), 201
+
 
 @auth.route("/logout", methods=["DELETE"])
 @jwt_required()

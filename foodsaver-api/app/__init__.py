@@ -34,14 +34,14 @@ def create_app():
 
     # Configurer SQLAlchemy
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 
     #conf local 
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://username:password@localhost/mydatabase'
 
 
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    SQLALCHEMY_DATABASE_URI = 'postgresql://root:cdqhVsE4lE813CKYUaxzAoIxEFmdgbAr@dpg-cucd58aj1k6c73b90vg0-a/foodsaver_q8vp'
-
+   
     # Configurer JWT
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
     # Ajoutez une clé secrète

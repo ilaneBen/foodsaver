@@ -64,3 +64,14 @@ def create_app():
     app.register_blueprint(product, url_prefix="/")
 
     return app
+
+
+if __name__ == "__main__":
+    # Créer l'application Flask
+    app = create_app()
+
+    # Récupérer le port depuis les variables d'environnement (défini par Render)
+    port = int(os.environ.get("PORT", 5000))  # Par défaut, port 5000 si PORT n'est pas défini
+
+    # Lancer l'application sur l'hôte 0.0.0.0
+    app.run(host="0.0.0.0", port=port)

@@ -19,9 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.1.0 <4.0.0"
-
-
+  sdk: ^3.5.1
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -46,8 +44,7 @@ dependencies:
   loading_overlay: ^0.4.2
   rflutter_alert: ^2.0.4
   flutter_secure_storage: ^9.2.4
-  intl: "0.17.0"
-
+  intl: ^0.20.2
   
 
 dev_dependencies:

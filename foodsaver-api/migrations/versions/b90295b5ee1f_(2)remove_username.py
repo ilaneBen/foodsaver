@@ -1,4 +1,4 @@
-"""remove username
+"""Remove username (tUser)
 
 Revision ID: b90295b5ee1f
 Revises: 778fd3e73b54

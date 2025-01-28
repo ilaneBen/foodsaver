@@ -25,18 +25,22 @@ class User(db.Model):
         
 class Product(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name_eng: Mapped[str] = mapped_column(String(255), nullable=True)
+    name_en: Mapped[str] = mapped_column(String(255), nullable=True)
     name_fr: Mapped[str] = mapped_column(String(255), nullable=False)
     img_url: Mapped[str] = mapped_column(String(255), nullable=True)
     barcode: Mapped[str] = mapped_column(String(255), nullable=True)
+    brand: Mapped[str] = mapped_column(String(255), nullable=True)
+    categories: Mapped[str] = mapped_column(String(255), nullable=True)
 
     def serialize(self):
         return {
             "id": self.id,
-            "name_eng": self.name_eng,
+            "name_en": self.name_en,
             "name_fr": self.name_fr,
             "img_url": self.img_url,
-            "barcode": self.barcode
+            "barcode": self.barcode,
+            "brand": self.brand,
+            "categories": self.categories
         }
 
 class UserProduct(db.Model):
@@ -53,8 +57,6 @@ class UserProduct(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "product_id": self.product_id,
-            "product_name": self.product.name,
-            "product_img_url": self.product.img_url,
             "dlc": self.dlc,
             "created_at": self.created_at
         }

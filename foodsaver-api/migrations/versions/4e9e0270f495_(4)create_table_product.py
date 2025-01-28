@@ -1,4 +1,4 @@
-"""empty message
+"""Create table Product
 
 Revision ID: 4e9e0270f495
 Revises: 3fe8851716a2

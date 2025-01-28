@@ -32,11 +32,15 @@ def create_app():
 
     CORS(app, resources={r"/*": {"origins": "*"}})
 
-
-    # Configurer SQLAlchemy
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("La variable d'environnement DATABASE_URL n'est pas définie.")
+    
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+ 
 
+    print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
 
     #conf local 
     # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://username:password@localhost/mydatabase'

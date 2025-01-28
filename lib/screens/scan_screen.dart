@@ -123,7 +123,7 @@ class _ScanScreenState extends State<ScanScreen> {
           }
         }
 
-        // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
+        // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement
         final response = await http.post(
           productsUrl,
           headers: {
@@ -166,7 +166,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
       // Afficher une pop up pour entrer la DLC
       final selectedDlc = await _promptDlcInput();
-    
+
       // Vérifie si une valeur a été saisie
       if (selectedDlc == null) {
         // Affiche une modal si aucune valeur n'a été saisie
@@ -180,7 +180,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop(); // Ferme la modal
-                      _promptDlcInput(); // Relance la sélection DLC
+                    _promptDlcInput(); // Relance la sélection DLC
                   },
                   child: Text("OK"),
                 ),
@@ -194,31 +194,30 @@ class _ScanScreenState extends State<ScanScreen> {
       // Si une valeur est saisie, vous pouvez poursuivre votre logique
       print("DLC sélectionnée : $selectedDlc");
 
-        // Ajout dans user/products
-        final userProductResponse = await http.post(
-          userProductsUrl,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
-            'product_id': productId,
-            'dlc': selectedDlc,
-          }),
-        );
-        if (userProductResponse.statusCode == 201) {
-          print("Produit enregistré avec succès dans user/products.");
-          _fetchUserProducts();
-          _showSuccessDialog("Produit ajouté avec succès !");
-        } else {
-          print(
-              "Erreur lors de l'enregistrement dans user/products : ${userProductResponse.body}");
-        }
-      } catch (e) {
-        print("Erreur lors du traitement du produit : $e");
+      // Ajout dans user/products
+      final userProductResponse = await http.post(
+        userProductsUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'product_id': productId,
+          'dlc': selectedDlc,
+        }),
+      );
+      if (userProductResponse.statusCode == 201) {
+        print("Produit enregistré avec succès dans user/products.");
+        _fetchUserProducts();
+        _showSuccessDialog("Produit ajouté avec succès !");
+      } else {
+        print(
+            "Erreur lors de l'enregistrement dans user/products : ${userProductResponse.body}");
       }
+    } catch (e) {
+      print("Erreur lors du traitement du produit : $e");
+    }
   }
-
 
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
@@ -231,7 +230,8 @@ class _ScanScreenState extends State<ScanScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: const Text("Entrer la DLC", style: TextStyle(color: Colors.black)),
+          title: const Text("Entrer la DLC",
+              style: TextStyle(color: Colors.black)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -248,7 +248,8 @@ class _ScanScreenState extends State<ScanScreen> {
                   if (pickedDate != null && mounted) {
                     setState(() {
                       selectedDate = pickedDate;
-                      _dateController.text = "${pickedDate.day}/${pickedDate.month.toString().padLeft(2,'0')}/${pickedDate.year}";
+                      _dateController.text =
+                          "${pickedDate.day}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
                     });
                   }
                 },
@@ -263,10 +264,10 @@ class _ScanScreenState extends State<ScanScreen> {
                 child: TextField(
                   controller: _dateController,
                   decoration: InputDecoration(
-                    labelText: "Date sélectionnée:",
-                    filled: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30))
-                  ),
+                      labelText: "Date sélectionnée:",
+                      filled: true,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30))),
                   readOnly: true,
                   enabled: false,
                 ),
@@ -291,7 +292,7 @@ class _ScanScreenState extends State<ScanScreen> {
       },
     );
 
-    return "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2,'0')}-${selectedDate!.day}";
+    return "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day}";
   }
 
   //fonction de duplication et suppression des produits
@@ -329,9 +330,9 @@ class _ScanScreenState extends State<ScanScreen> {
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
-        print("Erreur : Token d'authentification non trouvé.");
-        return;
-      }
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
 
     if (productId.isEmpty) {
       print("Produit ID ou Token manquant.");
@@ -356,7 +357,6 @@ class _ScanScreenState extends State<ScanScreen> {
         print(
             "Erreur lors de la suppression (Code HTTP : ${response.statusCode}). Réponse : ${response.body}");
       }
-
     } catch (e) {
       print("Erreur lors de la suppression du produit : $e");
     }
@@ -413,7 +413,7 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  //ajout via scan 
+  //ajout via scan
   void _scanBarcode() async {
     if (!mounted) return;
 
@@ -475,7 +475,8 @@ class _ScanScreenState extends State<ScanScreen> {
 
     try {
       // Définir le format de la chaîne de date
-      final parsedDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss").parse(date, true);
+      final parsedDate =
+          DateFormat("EEE, dd MMM yyyy HH:mm:ss").parse(date, true);
       // Retourner la date formatée
       return DateFormat('dd/MM/yyyy').format(parsedDate);
     } catch (e) {
@@ -491,7 +492,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -537,8 +537,9 @@ class _ScanScreenState extends State<ScanScreen> {
                                 vertical: 8.0, horizontal: 16.0),
                             child: ListTile(
                               title: Text(item['name_fr'] ?? "Nom inconnu"),
-                              subtitle: Text("DLC: ${_formatDate(item['dlc'])}",),
-
+                              subtitle: Text(
+                                "DLC: ${_formatDate(item['dlc'])}",
+                              ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -566,8 +567,8 @@ class _ScanScreenState extends State<ScanScreen> {
                     onPressed: _scanBarcode,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kTextColor,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 15),
                     ),
                     child: const Text("Scanner un produit",
                         style: TextStyle(fontSize: 16, color: Colors.white)),
@@ -576,14 +577,15 @@ class _ScanScreenState extends State<ScanScreen> {
                     onPressed: _addManualProduct,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 15),
                     ),
                     child: const Text("Ajouter manuellement",
                         style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ],
               ),
+              SizedBox(height: 20), // Ajoute un espace de 20 pixels en bas
             ],
           );
         },

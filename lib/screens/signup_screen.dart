@@ -38,7 +38,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       final response = await http.post(
         Uri.parse('http://localhost:5000/register'),
-        headers: {'Content-Type': 'application/json','Access-Control-Allow-Origin': '*'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
         body: jsonEncode({'email': email, 'password': password}),
       );
 
@@ -78,13 +81,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.home),
-          onPressed: () {
-            Navigator.pushNamed(context, HomeScreen.id);
-          },
+          leading: IconButton(
+            icon: Icon(Icons.home),
+            onPressed: () {
+              Navigator.pushNamed(context, HomeScreen.id);
+            },
+          ),
         ),
-      ),
         backgroundColor: Colors.white,
         body: LoadingOverlay(
           isLoading: _isLoading,
@@ -141,6 +144,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               child: CustomTextField(
                                 textField: TextFormField(
                                   controller: _passwordController,
+                                  obscureText: true,
                                   style: const TextStyle(fontSize: 20),
                                   decoration: kTextInputDecoration.copyWith(
                                     hintText: 'Mot de passe',
@@ -162,6 +166,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               child: CustomTextField(
                                 textField: TextFormField(
                                   controller: _confirmPasswordController,
+                                  obscureText: true,
                                   style: const TextStyle(fontSize: 20),
                                   decoration: kTextInputDecoration.copyWith(
                                     hintText: 'Confirmer mot de passe',

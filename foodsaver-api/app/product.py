@@ -43,9 +43,9 @@ def add_product():
             return jsonify({"msg": "The field 'name_fr' is required."}), 400
 
         # Traduire automatiquement si nécessaire
-        name_eng = data.get("name_eng")
-        if not name_eng:
-            name_eng = translate_to_english(name_fr)
+        name_en = data.get("name_en")
+        if not name_en:
+            name_en = translate_to_english(name_fr)
 
         # Vérifier si un produit avec ce code-barres existe déjà
         barcode = data.get("barcode")
@@ -59,7 +59,7 @@ def add_product():
 
         # Création d'un nouvel objet produit
         new_product = Product(
-            name_eng=name_eng,
+            name_en=name_en,
             name_fr=name_fr,
             img_url=data.get("img_url"),
             barcode=barcode,

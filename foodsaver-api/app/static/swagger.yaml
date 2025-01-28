@@ -199,7 +199,7 @@ paths:
             schema:
               type: object
               properties:
-                name_eng:
+                name_en:
                   type: string
                   example: "Apple"
                 name_fr:

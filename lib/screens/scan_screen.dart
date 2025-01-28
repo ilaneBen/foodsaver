@@ -335,7 +335,7 @@ class _ScanScreenState extends State<ScanScreen> {
         return;
       }
 
-    if (productId == null || productId =="") {
+    if (productId.isEmpty) {
       print("Produit ID ou Token manquant.");
       return;
     }

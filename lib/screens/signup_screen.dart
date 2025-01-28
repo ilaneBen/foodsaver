@@ -25,53 +25,55 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String _errorMessage = '';
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+  setState(() {
+    _isLoading = true;
+    _errorMessage = '';
+  });
 
-    final email = _emailController.text;
-    final password = _passwordController.text;
+  final email = _emailController.text;
+  final password = _passwordController.text;
 
-    try {
-      final response = await http.post(
-        Uri.parse('$apiUrl/register'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+  try {
+    final response = await http.post(
+      Uri.parse('$apiUrl/register'), // Assurez-vous que $apiUrl est correct
+      headers: {
+        'Content-Type': 'application/json',  
+        'Accept': 'application/json',  
+      },
+      body: jsonEncode({'email': email, 'password': password}), // Encodage JSON
+    );
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 201) {
+      signUpAlert(
+        context: context,
+        title: 'Registration Successful',
+        desc: 'You can now log in with your credentials',
+        btnText: 'Login Now',
+        onPressed: () {
+          Navigator.pushReplacementNamed(context, LoginScreen.id);
         },
-        body: jsonEncode(
-            {'email': email, 'password': password}), // Encodage en JSON
-      );
-
-      if (response.statusCode == 201) {
-        signUpAlert(
-          context: context,
-          title: 'Registration Successful',
-          desc: 'You can now log in with your credentials',
-          btnText: 'Login Now',
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, LoginScreen.id);
-          },
-        ).show();
-      } else {
-        setState(() {
-          _errorMessage = 'Failed to connect to server (${response.body})';
-        });
-      }
-    } catch (e) {
+      ).show();
+    } else {
       setState(() {
-        _errorMessage = 'An error occurred: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _errorMessage = 'Failed to connect to server (${response.body})';
       });
     }
+  } catch (e) {
+    setState(() {
+      _errorMessage = 'An error occurred: $e';
+    });
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

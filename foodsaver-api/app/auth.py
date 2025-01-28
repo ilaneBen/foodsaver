@@ -24,21 +24,28 @@ def login():
 
 @auth.route("/register", methods=["POST"])
 def register():
-    email = request.json.get("email", None)
-    password = request.json.get("password", None)
+    if not request.is_json:
+        return jsonify({"msg": "Request must be JSON"}), 415
 
-    if email is None or password is None:
-        return jsonify({"msg": "Missing email or password"}), 400 # return 400 Bad request HTTP status code
+    data = request.get_json()  # Correctement extraire le JSON
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({"msg": "Missing email or password"}), 400
+
     check_user = User.query.filter_by(email=email).first()
     if check_user:
         return jsonify({"msg": "Email already exists"}), 400
-    
-    user = User(email=email, password=password)
+
+    # Hashage du mot de passe avant de l'enregistrer
+    hashed_password = generate_password_hash(password)
+
+    user = User(email=email, password=hashed_password)
     db.session.add(user)
     db.session.commit()
 
     return jsonify({"msg": "User created successfully"}), 201
-
 
 
 @auth.route("/logout", methods=["DELETE"])

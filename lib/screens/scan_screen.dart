@@ -416,34 +416,35 @@ class _ScanScreenState extends State<ScanScreen> {
 
   //ajout via scan 
   void _scanBarcode() async {
-    // if (!mounted) return;
+    if (!mounted) return;
 
-    // await Navigator.of(context).push(MaterialPageRoute(
-    //   builder: (_) => MobileScanner(
-    //     onDetect: (barcodeCapture) {
-    //       if (barcodeCapture.barcodes.isNotEmpty) {
-    //         final barcode = barcodeCapture.barcodes.first;
-    //         if (barcode.rawValue != null && mounted) {
-    //           _handleProductSubmission(
-    //             barcode: barcode.rawValue!,
-    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
-    //             categories: null,
-    //             brand: null,
-    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
-    //           );
-    //           Navigator.of(context, rootNavigator: true).pop();
-    //         }
-    //       }
-    //     },
-    //   ),
-    // ));
-    _handleProductSubmission(
-                barcode: "8594001022038",
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MobileScanner(
+        onDetect: (barcodeCapture) {
+          if (barcodeCapture.barcodes.isNotEmpty) {
+            final barcode = barcodeCapture.barcodes.first;
+            if (barcode.rawValue != null && mounted) {
+              _handleProductSubmission(
+                barcode: barcode.rawValue!,
                 nameFr: "", // Remplir avec un nom par défaut si nécessaire
                 categories: null,
                 brand: null,
                 dlc: "", // Remplir avec une DLC par défaut si nécessaire
               );
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+          }
+        },
+      ),
+    ));
+    //DEBUG - Code bar en dur
+    // _handleProductSubmission(
+    //             barcode: "8594001022038",
+    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
+    //             categories: null,
+    //             brand: null,
+    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
+    //           );
   }
 
   //pop up de confirmation
@@ -508,8 +509,6 @@ class _ScanScreenState extends State<ScanScreen> {
             );
           }
 
-          final token = snapshot.data;
-
           return Column(
             children: [
               Expanded(
@@ -572,7 +571,7 @@ class _ScanScreenState extends State<ScanScreen> {
                           const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                     ),
                     child: const Text("Ajouter manuellement",
-                        style: TextStyle(fontSize: 16)),
+                        style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 7, 77, 9))),
                   ),
                 ],
               ),

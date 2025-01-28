@@ -43,7 +43,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
           signUpAlert(
             context: context,
             title: 'Registration Successful',

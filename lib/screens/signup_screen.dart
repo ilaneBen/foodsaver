@@ -23,6 +23,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
+  bool _isPasswordVisible1 = false;
+  bool _isPasswordVisible2 = false;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -98,8 +100,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Image.asset(
-                  'assets/images/signup.png',
-                  height: MediaQuery.of(context).size.height - 463,
+                    'assets/images/signup.png',
+                    height: MediaQuery.of(context).size.height - 463,
                   ),
                   Expanded(
                     flex: 2,
@@ -147,12 +149,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               child: CustomTextField(
                                 textField: TextFormField(
                                   controller: _passwordController,
-                                  obscureText: true,
+                                  obscureText: !_isPasswordVisible1,
                                   style: const TextStyle(fontSize: 20),
                                   decoration: kTextInputDecoration.copyWith(
                                     hintText: 'Mot de passe',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _isPasswordVisible1
+                                            ? Icons.visibility
+                                            : Icons.visibility_off,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isPasswordVisible1 =
+                                              !_isPasswordVisible1;
+                                        });
+                                      },
                                     ),
                                   ),
                                   validator: (value) {
@@ -169,12 +184,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               child: CustomTextField(
                                 textField: TextFormField(
                                   controller: _confirmPasswordController,
-                                  obscureText: true,
+                                  obscureText: !_isPasswordVisible2,
                                   style: const TextStyle(fontSize: 20),
                                   decoration: kTextInputDecoration.copyWith(
                                     hintText: 'Confirmer mot de passe',
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _isPasswordVisible2
+                                            ? Icons.visibility
+                                            : Icons.visibility_off,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isPasswordVisible2 =
+                                              !_isPasswordVisible2;
+                                        });
+                                      },
                                     ),
                                   ),
                                   validator: (value) {

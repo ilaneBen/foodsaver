@@ -1,10 +1,23 @@
 #!/bin/bash
 
 # Variables
-FLUTTER_VERSION="3.13.0"
-DART_VERSION="3.5.1"
+#!/bin/bash
+
+# Variables
+FLUTTER_VERSION="3.13.0"  # Version de Flutter compatible avec Dart 3.5.1
 FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
-DART_URL="https://storage.googleapis.com/dart-archive/channels/stable/release/${DART_VERSION}/sdk/dartsdk-linux-x64-release.zip"
+
+# Télécharger et installer Flutter
+echo "Downloading Flutter $FLUTTER_VERSION..."
+curl -LO $FLUTTER_URL
+tar xf flutter_linux_${FLUTTER_VERSION}-stable.tar.xz
+
+# Ajouter Flutter au PATH
+export PATH="$PWD/flutter/bin:$PATH"
+
+# Vérifier les versions de Flutter et Dart
+flutter --version || { echo "Failed to install Flutter"; exit 1; }
+dart --version || { echo "Failed to install Dart"; exit 1; }
 
 # Installer Flutter
 echo "Downloading Flutter $FLUTTER_VERSION..."

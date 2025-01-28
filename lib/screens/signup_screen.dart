@@ -34,17 +34,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     final email = _emailController.text;
     final password = _passwordController.text;
+    final Uri url = Uri.parse('$apiUrl/register');
 
     try {
       final response = await http.post(
-        Uri.parse('$apiUrl/register'),
+        url,
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type':
+              'application/json', // Assurez-vous que c'est bien défini
+          'Accept':
+              'application/json', // Pour s'assurer que le serveur accepte du JSON
         },
-        body: jsonEncode(
-            {'email': email, 'password': password}), // Encodage en JSON
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
       );
 
       if (response.statusCode == 201) {

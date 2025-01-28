@@ -9,6 +9,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
 
 db = SQLAlchemy()
+migrate = Migrate()
 cors = CORS()
 
 # Fonction pour créer l'application Flask
@@ -33,14 +34,20 @@ def create_app():
 
     # Configurer SQLAlchemy
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+
+    #conf local 
+    # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://username:password@localhost/mydatabase'
+
+
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    SQLALCHEMY_DATABASE_URI = 'postgresql://root:cdqhVsE4lE813CKYUaxzAoIxEFmdgbAr@dpg-cucd58aj1k6c73b90vg0-a/foodsaver_q8vp'
 
     # Configurer JWT
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 
     # Initialiser les extensions
     db.init_app(app)
-    migrate = Migrate(app, db)
+    migrate.init_app(app, db)
     jwt = JWTManager(app)
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
 

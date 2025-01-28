@@ -86,8 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Image.asset(
                   'assets/images/welcome.png',
-                  width: 200.0,
-                  height: 200.0,
+                  height: MediaQuery.of(context).size.height - 403,
                 ),
                 Expanded(
                   child: Padding(

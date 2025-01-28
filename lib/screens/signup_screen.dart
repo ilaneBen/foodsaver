@@ -97,7 +97,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const TopScreenImage(screenImageName: 'signup.png'),
+                  Image.asset(
+                  'assets/images/signup.png',
+                  height: MediaQuery.of(context).size.height - 463,
+                  ),
                   Expanded(
                     flex: 2,
                     child: Form(

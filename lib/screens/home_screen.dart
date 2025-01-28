@@ -20,8 +20,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               Image.asset(
                   'assets/images/home.jpg',
-                  width: 400.0,
-                  height: 400.0,
+                  height: MediaQuery.of(context).size.height - 321, 
                 ),
               Expanded(
                 child: Padding(

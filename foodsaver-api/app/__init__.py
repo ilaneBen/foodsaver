@@ -15,7 +15,8 @@ cors = CORS()
 # Fonction pour créer l'application Flask
 def create_app():
     # Charger le fichier .env
-    load_dotenv()
+    if os.getenv("FLASK_ENV") == "development":
+        load_dotenv()
 
     # # Utiliser les variables d'environnement
     # MYSQL_HOST = os.getenv('MYSQL_HOST')

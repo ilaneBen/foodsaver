@@ -11,7 +11,6 @@ class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
   static String id = 'signup_screen';
 
-
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
@@ -20,7 +19,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -38,22 +38,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       final response = await http.post(
         Uri.parse('$apiUrl/register'),
-        headers: {'Content-Type': 'application/json','Access-Control-Allow-Origin': '*'},
-        body: jsonEncode({'email': email, 'password': password}),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: jsonEncode(
+            {'email': email, 'password': password}), // Encodage en JSON
       );
 
       if (response.statusCode == 201) {
-          signUpAlert(
-            context: context,
-            title: 'Registration Successful',
-            desc: 'You can now log in with your credentials',
-            btnText: 'Login Now',
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, LoginScreen.id);
-            },
-          ).show();
-        } 
-      else {
+        signUpAlert(
+          context: context,
+          title: 'Registration Successful',
+          desc: 'You can now log in with your credentials',
+          btnText: 'Login Now',
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, LoginScreen.id);
+          },
+        ).show();
+      } else {
         setState(() {
           _errorMessage = 'Failed to connect to server (${response.body})';
         });

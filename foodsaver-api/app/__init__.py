@@ -51,7 +51,7 @@ def create_app():
     # Configurer JWT
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
     # Ajoutez une clé secrète
-    import os
+
     app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY")
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 

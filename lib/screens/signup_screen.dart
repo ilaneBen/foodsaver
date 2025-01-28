@@ -37,7 +37,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/register'),
+        Uri.parse('$apiUrl/register'),
         headers: {'Content-Type': 'application/json','Access-Control-Allow-Origin': '*'},
         body: jsonEncode({'email': email, 'password': password}),
       );

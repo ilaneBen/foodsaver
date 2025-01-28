@@ -2,7 +2,7 @@
 
 # Variables
 FLUTTER_VERSION="3.14.0"
-FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz"
 FLUTTER_DIR="flutter"
 
 # Télécharger Flutter

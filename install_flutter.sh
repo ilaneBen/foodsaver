@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-FLUTTER_VERSION="3.10.6"
+FLUTTER_VERSION="3.13.0"
 DART_VERSION="3.5.1"
 FLUTTER_URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
 DART_URL="https://storage.googleapis.com/dart-archive/channels/stable/release/${DART_VERSION}/sdk/dartsdk-linux-x64-release.zip"

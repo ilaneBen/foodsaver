@@ -1,4 +1,7 @@
+import 'package:connected_fridge/screens/signup_screen.dart';
+
 import '/screens/scan_screen.dart';
+import '/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -50,6 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
           print("Erreur : Token non trouvé dans la réponse.");
         }
       } else {
+        setState(() {
+          _errorMessage = "Email ou mot de passe incorrect";
+        });
         print(
             "Erreur lors du login (HTTP ${response.statusCode}): ${response.body}");
       }
@@ -61,6 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.home),
+          onPressed: () {
+            Navigator.pushNamed(context, HomeScreen.id);
+          },
+        ),
+      ),
       backgroundColor: Colors.white,
       body: LoadingOverlay(
         isLoading: _saving,
@@ -70,7 +84,11 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const TopScreenImage(screenImageName: 'welcome.png'),
+                Image.asset(
+                  'assets/images/welcome.png',
+                  width: 200.0,
+                  height: 200.0,
+                ),
                 Expanded(
                   child: Padding(
                     padding:
@@ -79,39 +97,53 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        const ScreenTitle(title: 'Login'),
-                        CustomTextField(
-                          textField: TextFormField(
-                            controller: _emailController,
-                            style: const TextStyle(fontSize: 20),
-                            decoration: kTextInputDecoration.copyWith(
-                                hintText: 'Email'),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                  .hasMatch(value)) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
+                        const ScreenTitle(title: 'Connexion'),
+                        Container(
+                          width: 500, // Définir la largeur souhaitée
+                          child: CustomTextField(
+                            textField: TextFormField(
+                              controller: _emailController,
+                              style: const TextStyle(fontSize: 20),
+                              decoration: kTextInputDecoration.copyWith(
+                                hintText: 'Email',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                    .hasMatch(value)) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                         ),
-                        CustomTextField(
-                          textField: TextFormField(
-                            controller: _passwordController,
-                            obscureText: true,
-                            style: const TextStyle(fontSize: 20),
-                            decoration: kTextInputDecoration.copyWith(
-                                hintText: 'Password'),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              } else if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
-                              }
-                              return null;
-                            },
+                        Container(
+                          width: 500, // Définir la largeur souhaitée
+                          child: CustomTextField(
+                            textField: TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              style: const TextStyle(fontSize: 20),
+                              decoration: kTextInputDecoration.copyWith(
+                                hintText: 'Mot de passe',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your password';
+                                } else if (value.length < 6) {
+                                  return 'Password must be at least 6 characters';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                         ),
                         if (_errorMessage.isNotEmpty)
@@ -122,55 +154,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         Hero(
                           tag: 'login_btn',
                           child: CustomButton(
-                            buttonText: 'Login',
+                            buttonText: 'Se connecter',
                             onPressed: _login,
                           ),
                         ),
-                        const SizedBox(height: 15),
-                        const Text(
-                          'Forgot your password?',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
+                        Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, SignUpScreen.id);
+                            },
+                            child: const Text(
+                              "Vous avez pas encore de compte ?",
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 0, 0, 0)),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 15),
-                        const Text(
-                          'Sign in using',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              onPressed: () {},
-                              icon: CircleAvatar(
-                                radius: 25,
-                                child: Image.asset(
-                                    'assets/images/icons/facebook.png'),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {},
-                              icon: CircleAvatar(
-                                radius: 25,
-                                child: Image.asset(
-                                    'assets/images/icons/google.png'),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {},
-                              icon: CircleAvatar(
-                                radius: 25,
-                                child: Image.asset(
-                                    'assets/images/icons/linkedin.png'),
-                              ),
-                            ),
-                          ],
-                        )
                       ],
                     ),
                   ),

@@ -3,7 +3,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
+import '/screens/login_screen.dart';
+import '/constants.dart';
 
 class ScanScreen extends StatefulWidget {
   static const String id = 'scan_screen';
@@ -224,7 +225,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
-    if (!mounted) return "Error: Composant not mounted";
+    if (!mounted) return "Error: Composant DLC Input not mounted";
     DateTime? selectedDate;
     TextEditingController _dateController = TextEditingController();
 
@@ -403,6 +404,7 @@ class _ScanScreenState extends State<ScanScreen> {
                     brand: brand,
                     dlc: '', // DLC sera demandée plus tard
                   );
+                  Navigator.of(context).pop();
                 }
                 Navigator.of(context).pop();
               },
@@ -484,18 +486,28 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  // Ajoutez ici votre logique de déconnexion
+  void _logout() {
+    Navigator.pushReplacementNamed(
+        context, LoginScreen.id); // Redirige vers la page de connexion
+  }
+
   @override
   Widget build(BuildContext context) {
     
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: kTextColor,
         title: const Text(
-          'Scanner OpenFoodFacts',
+          'Scanner Foodsaver',
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.logout),
+          onPressed: _logout,
+        ),
       ),
       body: FutureBuilder<String?>(
         future: _getToken(),
@@ -556,12 +568,12 @@ class _ScanScreenState extends State<ScanScreen> {
                   ElevatedButton(
                     onPressed: _scanBarcode,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
+                      backgroundColor: kTextColor,
                       padding:
                           const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                     ),
                     child: const Text("Scanner un produit",
-                        style: TextStyle(fontSize: 16)),
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                   ElevatedButton(
                     onPressed: _addManualProduct,
@@ -571,7 +583,7 @@ class _ScanScreenState extends State<ScanScreen> {
                           const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                     ),
                     child: const Text("Ajouter manuellement",
-                        style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 7, 77, 9))),
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ],
               ),

@@ -11,7 +11,6 @@ class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
   static String id = 'signup_screen';
 
-
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
@@ -20,7 +19,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -43,17 +43,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (response.statusCode == 201) {
-          signUpAlert(
-            context: context,
-            title: 'Registration Successful',
-            desc: 'You can now log in with your credentials',
-            btnText: 'Login Now',
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, LoginScreen.id);
-            },
-          ).show();
-        } 
-      else {
+        final data = jsonDecode(response.body);
+        signUpAlert(
+          context: context,
+          title: 'Registration Successful',
+          desc: 'You can now log in with your credentials',
+          btnText: 'Login Now',
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, LoginScreen.id);
+          },
+        ).show();
+      } else {
         setState(() {
           _errorMessage = 'Failed to connect to server (${response.body})';
         });
@@ -77,6 +77,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         return true;
       },
       child: Scaffold(
+        appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.home),
+          onPressed: () {
+            Navigator.pushNamed(context, HomeScreen.id);
+          },
+        ),
+      ),
         backgroundColor: Colors.white,
         body: LoadingOverlay(
           isLoading: _isLoading,
@@ -97,70 +105,83 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const ScreenTitle(title: 'Sign Up'),
+                            const ScreenTitle(title: 'Inscription'),
                             if (_errorMessage.isNotEmpty)
                               Text(
                                 _errorMessage,
                                 style: const TextStyle(color: Colors.red),
                                 textAlign: TextAlign.center,
                               ),
-                            CustomTextField(
-                              textField: TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                style: const TextStyle(fontSize: 20),
-                                decoration: kTextInputDecoration.copyWith(
-                                  hintText: 'Email',
+                            Container(
+                              width: 500, // Définir la largeur souhaitée
+                              child: CustomTextField(
+                                textField: TextFormField(
+                                  controller: _emailController,
+                                  style: const TextStyle(fontSize: 20),
+                                  decoration: kTextInputDecoration.copyWith(
+                                    hintText: 'Email',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter your email';
+                                    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                        .hasMatch(value)) {
+                                      return 'Please enter a valid email';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your email';
-                                  } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                      .hasMatch(value)) {
-                                    return 'Please enter a valid email';
-                                  }
-                                  return null;
-                                },
                               ),
                             ),
-                            CustomTextField(
-                              textField: TextFormField(
-                                controller: _passwordController,
-                                obscureText: true,
-                                style: const TextStyle(fontSize: 20),
-                                decoration: kTextInputDecoration.copyWith(
-                                  hintText: 'Password',
+                            Container(
+                              width: 500, // Définir la largeur souhaitée
+                              child: CustomTextField(
+                                textField: TextFormField(
+                                  controller: _passwordController,
+                                  style: const TextStyle(fontSize: 20),
+                                  decoration: kTextInputDecoration.copyWith(
+                                    hintText: 'Mot de passe',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter your password';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your password';
-                                  } else if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
-                                  }
-                                  return null;
-                                },
                               ),
                             ),
-                            CustomTextField(
-                              textField: TextFormField(
-                                controller: _confirmPasswordController,
-                                obscureText: true,
-                                style: const TextStyle(fontSize: 20),
-                                decoration: kTextInputDecoration.copyWith(
-                                  hintText: 'Confirm Password',
+                            Container(
+                              width: 500, // Définir la largeur souhaitée
+                              child: CustomTextField(
+                                textField: TextFormField(
+                                  controller: _confirmPasswordController,
+                                  style: const TextStyle(fontSize: 20),
+                                  decoration: kTextInputDecoration.copyWith(
+                                    hintText: 'Confirmer mot de passe',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value != _passwordController.text) {
+                                      return 'Passwords do not match';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                validator: (value) {
-                                  if (value != _passwordController.text) {
-                                    return 'Passwords do not match';
-                                  }
-                                  return null;
-                                },
                               ),
                             ),
                             CustomBottomScreen(
-                              textButton: 'Sign Up',
+                              textButton: 'S\'inscrire',
                               heroTag: 'signup_btn',
-                              question: 'Have an account?',
+                              question: 'Vous avez déjà un compte ?',
                               buttonPressed: _register,
                               questionPressed: () {
                                 Navigator.pushNamed(context, LoginScreen.id);

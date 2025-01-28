@@ -94,19 +94,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Image.asset(
                   'assets/images/signup.png',
-                  height: MediaQuery.of(context).size.height - 463,
+                  width: MediaQuery.of(context).size.width - 570,
                   ),
-                  Expanded(
-                    flex: 2,
-                    child: Form(
+                  Form(
                       key: _formKey,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        padding: const EdgeInsets.only(top: 20, right: 20, left: 15),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -199,7 +197,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

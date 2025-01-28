@@ -27,8 +27,11 @@ def create_app():
     # Créer une instance de l'application Flask
     app = Flask(__name__)
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
-    app.config["JWT_SECRET_KEY"] = "generate-a-random-string"
+    import os
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 
     db.init_app(app)

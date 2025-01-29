@@ -21,6 +21,8 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   List<Map<String, dynamic>> scannedProducts = [];
 
+  get storage => null;
+
   @override
   void initState() {
     super.initState();

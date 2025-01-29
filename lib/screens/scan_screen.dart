@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -18,8 +17,9 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  final storage = const FlutterSecureStorage();
   List<Map<String, dynamic>> scannedProducts = [];
+
+  get storage => null;
 
   @override
   void initState() {
@@ -30,6 +30,7 @@ class _ScanScreenState extends State<ScanScreen> {
   /// Vérifie si l'utilisateur est connecté
   Future<void> _checkAuthentication() async {
     final token = await storage.read(key: 'auth_token');
+
     if (token == null) {
       Navigator.pushReplacementNamed(context, LoginScreen.id);
       return;
@@ -222,6 +223,7 @@ class _ScanScreenState extends State<ScanScreen> {
         print("Erreur lors du traitement du produit : $e");
       }
   }
+
 
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {

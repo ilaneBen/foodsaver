@@ -31,7 +31,7 @@ class _ScanScreenState extends State<ScanScreen> {
   Future<void> _checkAuthentication() async {
     final token = await storage.read(key: 'auth_token');
     if (token == null) {
-     Navigator.pushReplacementNamed(context, LoginScreen.id);
+      Navigator.pushReplacementNamed(context, LoginScreen.id);
       return;
     }
     _fetchUserProducts(token);
@@ -40,7 +40,6 @@ class _ScanScreenState extends State<ScanScreen> {
   //Affichage des produits de la table user/products deja en BDD
   Future<void> _fetchUserProducts(String token) async {
     
-   
     try {
       final url = Uri.parse('$apiUrl/user/products');
       final response = await http.get(

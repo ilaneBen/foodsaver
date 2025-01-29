@@ -39,7 +39,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/register'),
+        Uri.parse('$apiUrl/register'), // Assurez-vous que $apiUrl est correct
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
@@ -48,7 +48,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
         signUpAlert(
           context: context,
           title: 'Registration Successful',
@@ -106,7 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Form(
                       key: _formKey,
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 20, right: 20, left: 15),
+                        padding: const EdgeInsets.only(right: 20, left: 15),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.center,

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
-import '/constants.dart'; // Vos constantes
 import '/screens/login_screen.dart';
-
+import '/constants.dart';
 
 class ScanScreen extends StatefulWidget {
   static const String id = 'scan_screen';
@@ -67,142 +66,138 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   //fonction de verification et enregistrement des produits dans la bdd
-    Future<void> _handleProductSubmission({
-      required String? barcode,
-      required String nameFr,
-      String? categories,
-      String? brand,
-      String? img_url,
-      required String dlc,
-    }) async {
-      final storage = const FlutterSecureStorage();
-      final token = await storage.read(key: 'auth_token');
+  Future<void> _handleProductSubmission({
+    required String? barcode,
+    required String nameFr,
+    String? categories,
+    String? brand,
+    String? img_url,
+    required String dlc,
+  }) async {
+    final storage = const FlutterSecureStorage();
+    final token = await storage.read(key: 'auth_token');
 
-      if (token == null) {
-        print("Erreur : Token d'authentification non trouvé.");
-        return;
-      }
+    if (token == null) {
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
 
       try {
         final searchUrl = Uri.parse('$apiUrl/products/search');
         final productsUrl = Uri.parse('$apiUrl/products');
         final userProductsUrl = Uri.parse('$apiUrl/user/products');
 
-        // Rechercher le produit dans la BDD
-        final queryParameters = {
-          if (barcode != null) 'barcode': barcode,
-          if (nameFr.isNotEmpty) 'name_fr': nameFr,
-        };
+      // Rechercher le produit dans la BDD
+      final queryParameters = {
+        if (barcode != null) 'barcode': barcode,
+        if (nameFr.isNotEmpty) 'name_fr': nameFr,
+      };
 
-        final productResponse = await http.get(
-          searchUrl.replace(queryParameters: queryParameters),
-          headers: {'Authorization': 'Bearer $token'},
-        );
+      final productResponse = await http.get(
+        searchUrl.replace(queryParameters: queryParameters),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-        Map<String, dynamic>? product;
-        String? productId;
+      Map<String, dynamic>? product;
+      String? productId;
 
-        if (productResponse.statusCode == 200) {
-          // Produit trouvé dans la BDD
-          final responseData = jsonDecode(productResponse.body);
-          product = responseData['product'];
-          if (product != null && product.containsKey('id')) {
-            productId = product['id'].toString();
-          }
-        } else if (productResponse.statusCode == 404) {
-          // Produit non trouvé, vérifiez OpenFoodFacts si un code-barres est disponible
-          if (barcode != null) {
-            print("Produit inconnu, vérification via OpenFoodFacts.");
-            final openFoodFactsUrl = Uri.parse(
-                'https://world.openfoodfacts.org/api/v0/product/$barcode.json');
-            final openFoodResponse = await http.get(openFoodFactsUrl);
+      if (productResponse.statusCode == 200) {
+        // Produit trouvé dans la BDD
+        final responseData = jsonDecode(productResponse.body);
+        product = responseData['product'];
+        if (product != null && product.containsKey('id')) {
+          productId = product['id'].toString();
+        }
+      } else if (productResponse.statusCode == 404) {
+        // Produit non trouvé, vérifiez OpenFoodFacts si un code-barres est disponible
+        if (barcode != null) {
+          print("Produit inconnu, vérification via OpenFoodFacts.");
+          final openFoodFactsUrl = Uri.parse(
+              'https://world.openfoodfacts.org/api/v0/product/$barcode.json');
+          final openFoodResponse = await http.get(openFoodFactsUrl);
 
-            if (openFoodResponse.statusCode == 200) {
-              final openFoodData = jsonDecode(openFoodResponse.body)['product'];
-              nameFr = openFoodData['product_name'] ?? nameFr;
-              brand = openFoodData['brands'] ?? brand;
-              img_url = openFoodData['image_front_url'] ?? img_url;
-              categories = openFoodData['categories'] ?? categories;
-            } else {
-              print(
-                  "Erreur lors de la récupération des données depuis OpenFoodFacts.");
-            }
-          }
-
-          // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement 
-          final response = await http.post(
-            productsUrl,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode({
-              'barcode': barcode,
-              'name_fr': nameFr,
-              'categories': categories,
-              'brand': brand,
-            }),
-          );
-
-          if (response.statusCode == 201) {
-            final responseData = jsonDecode(response.body);
-            if (responseData.containsKey('id')) {
-              productId = responseData['id'].toString();
-              print(
-                  "Produit ajouté à la base de données avec succès, ID : $productId");
-            } else {
-              print("Erreur : L'ID du produit est absent dans la réponse.");
-              return;
-            }
+          if (openFoodResponse.statusCode == 200) {
+            final openFoodData = jsonDecode(openFoodResponse.body)['product'];
+            nameFr = openFoodData['product_name'] ?? nameFr;
+            brand = openFoodData['brands'] ?? brand;
+            img_url = openFoodData['image_front_url'] ?? img_url;
+            categories = openFoodData['categories'] ?? categories;
           } else {
             print(
-                "Erreur lors de l'ajout du produit dans la BDD (Code HTTP : ${response.statusCode}).");
+                "Erreur lors de la récupération des données depuis OpenFoodFacts.");
+          }
+        }
+
+        // Ajouter à la BDD des produits avec code barre ou avec ajouter manuellement
+        final response = await http.post(
+          productsUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode({
+            'barcode': barcode,
+            'name_fr': nameFr,
+            'categories': categories,
+            'brand': brand,
+          }),
+        );
+
+        if (response.statusCode == 201) {
+          final responseData = jsonDecode(response.body);
+          if (responseData.containsKey('id')) {
+            productId = responseData['id'].toString();
+            print(
+                "Produit ajouté à la base de données avec succès, ID : $productId");
+          } else {
+            print("Erreur : L'ID du produit est absent dans la réponse.");
             return;
           }
         } else {
           print(
-              "Erreur lors de la recherche du produit : ${productResponse.body}");
+              "Erreur lors de l'ajout du produit dans la BDD (Code HTTP : ${response.statusCode}).");
           return;
         }
+      } else {
+        print(
+            "Erreur lors de la recherche du produit : ${productResponse.body}");
+        return;
+      }
 
-        if (productId == null) {
-          print("Erreur : ID produit non récupéré ou invalide.");
-          return;
-        }
+      if (productId == null) {
+        print("Erreur : ID produit non récupéré ou invalide.");
+        return;
+      }
 
-        // Afficher une pop up pour entrer la DLC
-        final selectedDlc = await _promptDlcInput();
-    
-    // Vérifie si une valeur a été saisie
-    if (selectedDlc == null) {
-      // Affiche une modal si aucune valeur n'a été saisie
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Erreur"),
-            content: Text("Aucune DLC saisie."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Ferme la modal
+      // Afficher une pop up pour entrer la DLC
+      final selectedDlc = await _promptDlcInput();
+
+      // Vérifie si une valeur a été saisie
+      if (selectedDlc == null) {
+        // Affiche une modal si aucune valeur n'a été saisie
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Erreur"),
+              content: Text("Aucune DLC saisie."),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Ferme la modal
                     _promptDlcInput(); // Relance la sélection DLC
+                  },
+                  child: Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+        return; // Arrête l'exécution si la valeur est null
+      }
 
-                },
-                child: Text("OK"),
-              ),
-            ],
-          );
-        },
-      );
-      return; // Arrête l'exécution si la valeur est null
-    }
-
-    // Si une valeur est saisie, vous pouvez poursuivre votre logique
-    print("DLC sélectionnée : $selectedDlc");
-    // Ajoutez ici les actions nécessaires avec `selectedDlc`
-
-    
+      // Si une valeur est saisie, vous pouvez poursuivre votre logique
+      print("DLC sélectionnée : $selectedDlc");
 
         // Ajout dans user/products
         final userProductResponse = await http.post(
@@ -229,10 +224,9 @@ class _ScanScreenState extends State<ScanScreen> {
       }
   }
 
-
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
-    if (!mounted) return "Error: Composant not mounted";
+    if (!mounted) return "Error: Composant DLC Input not mounted";
     DateTime? selectedDate;
     TextEditingController _dateController = TextEditingController();
 
@@ -241,7 +235,8 @@ class _ScanScreenState extends State<ScanScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: const Text("Entrer la DLC", style: TextStyle(color: Colors.black)),
+          title: const Text("Entrer la DLC",
+              style: TextStyle(color: Colors.black)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -258,7 +253,8 @@ class _ScanScreenState extends State<ScanScreen> {
                   if (pickedDate != null && mounted) {
                     setState(() {
                       selectedDate = pickedDate;
-                      _dateController.text = "${pickedDate.day}/${pickedDate.month.toString().padLeft(2,'0')}/${pickedDate.year}";
+                      _dateController.text =
+                          "${pickedDate.day}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
                     });
                   }
                 },
@@ -273,10 +269,10 @@ class _ScanScreenState extends State<ScanScreen> {
                 child: TextField(
                   controller: _dateController,
                   decoration: InputDecoration(
-                    labelText: "Date sélectionnée:",
-                    filled: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(30))
-                  ),
+                      labelText: "Date sélectionnée:",
+                      filled: true,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30))),
                   readOnly: true,
                   enabled: false,
                 ),
@@ -301,7 +297,7 @@ class _ScanScreenState extends State<ScanScreen> {
       },
     );
 
-    return "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2,'0')}-${selectedDate!.day}";
+    return "${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day}";
   }
 
   //fonction de duplication et suppression des produits
@@ -339,9 +335,9 @@ class _ScanScreenState extends State<ScanScreen> {
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
-        print("Erreur : Token d'authentification non trouvé.");
-        return;
-      }
+      print("Erreur : Token d'authentification non trouvé.");
+      return;
+    }
 
     if (productId.isEmpty) {
       print("Produit ID ou Token manquant.");
@@ -366,7 +362,6 @@ class _ScanScreenState extends State<ScanScreen> {
         print(
             "Erreur lors de la suppression (Code HTTP : ${response.statusCode}). Réponse : ${response.body}");
       }
-
     } catch (e) {
       print("Erreur lors de la suppression du produit : $e");
     }
@@ -411,6 +406,7 @@ class _ScanScreenState extends State<ScanScreen> {
                     brand: brand,
                     dlc: '', // DLC sera demandée plus tard
                   );
+                  Navigator.of(context).pop();
                 }
                 Navigator.of(context).pop();
               },
@@ -422,7 +418,7 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 
-  //ajout via scan 
+  //ajout via scan
   void _scanBarcode() async {
     if (!mounted) return;
 
@@ -484,7 +480,8 @@ class _ScanScreenState extends State<ScanScreen> {
 
     try {
       // Définir le format de la chaîne de date
-      final parsedDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss").parse(date, true);
+      final parsedDate =
+          DateFormat("EEE, dd MMM yyyy HH:mm:ss").parse(date, true);
       // Retourner la date formatée
       return DateFormat('dd/MM/yyyy').format(parsedDate);
     } catch (e) {
@@ -492,18 +489,27 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  // Ajoutez ici votre logique de déconnexion
+  void _logout() {
+    Navigator.pushReplacementNamed(
+        context, LoginScreen.id); // Redirige vers la page de connexion
+  }
+
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.lightBlueAccent,
+        backgroundColor: kTextColor,
         title: const Text(
-          'Scanner OpenFoodFacts',
+          'Scanner Foodsaver',
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.logout),
+          onPressed: _logout,
+        ),
       ),
       body: FutureBuilder<String?>(
         future: _getToken(),
@@ -536,8 +542,9 @@ class _ScanScreenState extends State<ScanScreen> {
                                 vertical: 8.0, horizontal: 16.0),
                             child: ListTile(
                               title: Text(item['name_fr'] ?? "Nom inconnu"),
-                              subtitle: Text("DLC: ${_formatDate(item['dlc'])}",),
-
+                              subtitle: Text(
+                                "DLC: ${_formatDate(item['dlc'])}",
+                              ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -564,25 +571,26 @@ class _ScanScreenState extends State<ScanScreen> {
                   ElevatedButton(
                     onPressed: _scanBarcode,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      backgroundColor: kTextColor,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 15),
                     ),
                     child: const Text("Scanner un produit",
-                        style: TextStyle(fontSize: 16)),
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                   ElevatedButton(
                     onPressed: _addManualProduct,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 15),
                     ),
                     child: const Text("Ajouter manuellement",
-                        style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 7, 77, 9))),
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ],
               ),
+              SizedBox(height: 20), // Ajoute un espace de 20 pixels en bas
             ],
           );
         },

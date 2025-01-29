@@ -14,7 +14,6 @@ class CustomButton extends StatelessWidget {
   final bool isOutlined;
   final Function onPressed;
   final double width;
-  
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +83,6 @@ class ScreenTitle extends StatelessWidget {
   }
 }
 
-
-
 class CustomTextField extends StatelessWidget {
   final Widget textField;
 
@@ -117,11 +114,25 @@ class CustomBottomScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
+        Center(
+          child: Hero(
+            tag: heroTag,
+            child: CustomButton(
+              buttonText: textButton,
+              width: 150,
+              onPressed: () {
+                buttonPressed();
+              },
+            ),
+          ),
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+        Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 30,
@@ -131,19 +142,6 @@ class CustomBottomScreen extends StatelessWidget {
                 questionPressed();
               },
               child: Text(question),
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Hero(
-            tag: heroTag,
-            child: CustomButton(
-              buttonText: textButton,
-              width: 150,
-              onPressed: () {
-                buttonPressed();
-              },
             ),
           ),
         ),

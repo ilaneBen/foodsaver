@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import '/constants.dart'; // Vos constantes
+import '/screens/login_screen.dart';
+
 
 class ScanScreen extends StatefulWidget {
   static const String id = 'scan_screen';
@@ -17,24 +19,29 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
+  final storage = const FlutterSecureStorage();
   List<Map<String, dynamic>> scannedProducts = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchUserProducts();
+    _checkAuthentication();
+  }
+
+  /// Vérifie si l'utilisateur est connecté
+  Future<void> _checkAuthentication() async {
+    final token = await storage.read(key: 'auth_token');
+    if (token == null) {
+     Navigator.pushReplacementNamed(context, LoginScreen.id);
+      return;
+    }
+    _fetchUserProducts(token);
   }
 
   //Affichage des produits de la table user/products deja en BDD
-  Future<void> _fetchUserProducts() async {
-    const storage = FlutterSecureStorage();
-    final token = await storage.read(key: 'auth_token');
-
-    if (token == null) {
-      print("Erreur : Token d'authentification non trouvé.");
-      return;
-    }
-
+  Future<void> _fetchUserProducts(String token) async {
+    
+   
     try {
       final url = Uri.parse('$apiUrl/user/products');
       final response = await http.get(

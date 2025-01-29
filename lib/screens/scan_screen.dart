@@ -222,6 +222,7 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
     if (!mounted) return "Error: Composant DLC Input not mounted";
@@ -440,14 +441,6 @@ class _ScanScreenState extends State<ScanScreen> {
         },
       ),
     ));
-    //DEBUG - Code bar en dur
-    // _handleProductSubmission(
-    //             barcode: "8594001022038",
-    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
-    //             categories: null,
-    //             brand: null,
-    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
-    //           );
   }
 
   //pop up de confirmation
@@ -485,7 +478,7 @@ class _ScanScreenState extends State<ScanScreen> {
     } catch (e) {
       return "Invalide"; // En cas d'erreur
     }
-  }
+    }
 
   // Ajoutez ici votre logique de déconnexion
   void _logout() async {
@@ -499,6 +492,40 @@ class _ScanScreenState extends State<ScanScreen> {
       print("Erreur lors de la déconnexion : $e");
     }
   }
+
+Future<List<Map<String, dynamic>>> _fetchRecipes(String? nameEng, String? dlc) async {
+  if (nameEng == null || dlc == null) {
+    return [];
+  }
+
+  try {
+    // Analyse de la date DLC
+    final now = DateTime.now();
+    final parsedDlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US').parse(dlc, true);
+
+    // Vérifiez si la DLC est dans 3 jours ou moins
+    if (parsedDlc.difference(now).inDays > 3) {
+      return [];
+    }
+
+    // Appel à l'API TheMealDB
+    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/filter.php?i=$nameEng');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data['meals'] != null) {
+        return List<Map<String, dynamic>>.from(data['meals']);
+      }
+    }
+  } catch (e) {
+    print("Erreur lors de la récupération des recettes : $e");
+  }
+
+  return [];
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -545,27 +572,67 @@ class _ScanScreenState extends State<ScanScreen> {
                           return Card(
                             margin: const EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 16.0),
-                            child: ListTile(
-                              title: Text(item['name_fr'] ?? "Nom inconnu"),
-                              subtitle: Text(
-                                "DLC: ${_formatDate(item['dlc'])}",
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.copy),
-                                    onPressed: () => _duplicateProduct(
-                                        item['id'].toString()),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () =>
-                                        _deleteProduct(item['id'].toString()),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            child: ExpansionTile(
+  title: Text(item['name_fr'] ?? "Nom inconnu"),
+  subtitle: Text("DLC: ${_formatDate(item['dlc'])}"),
+  trailing: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IconButton(
+        icon: const Icon(Icons.copy),
+        onPressed: () => _duplicateProduct(item['id'].toString()),
+      ),
+      IconButton(
+        icon: const Icon(Icons.delete),
+        onPressed: () => _deleteProduct(item['id'].toString()),
+      ),
+    ],
+  ),
+  children: [
+    FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchRecipes(item['name_eng'], item['dlc']),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Erreur lors de la récupération des recettes."),
+          );
+        }
+
+        final recipes = snapshot.data;
+
+        if (recipes == null || recipes.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Aucune recette trouvée."),
+          );
+        }
+
+        return Column(
+          children: recipes.map((recipe) {
+            return ListTile(
+              leading: Image.network(
+                recipe['strMealThumb'],
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+              ),
+              title: Text(recipe['strMeal']),
+            );
+          }).toList(),
+        );
+      },
+    ),
+  ],
+)
+
                           );
                         },
                       ),

@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '/screens/login_screen.dart';
 import '/constants.dart';
+import 'package:intl/intl.dart';
 
 class ScanScreen extends StatefulWidget {
   static const String id = 'scan_screen';

@@ -15,7 +15,7 @@ def search_products():
     """
     barcode = request.args.get("barcode")
     name_fr = request.args.get("name_fr")
-    name_eng = request.args.get("name_eng")
+    name_en = request.args.get("name_en")
 
     if not barcode and not name_fr:
         return jsonify({"msg": "Veuillez fournir un 'barcode' ou un 'name_fr'"}), 400
@@ -167,7 +167,7 @@ def get_user_products():
             "id": user_product.id,
             "product_id": user_product.product_id,
             "name_fr": user_product.product.name_fr,  # Supposez que vous avez une relation avec `Product`
-            "name_eng": user_product.product.name_eng,  # Supposez que vous avez une relation avec `Product`
+            "name_en": user_product.product.name_en,  # Supposez que vous avez une relation avec `Product`
             "dlc": user_product.dlc,
             "brand": user_product.product.brand,
             "categories": user_product.product.categories

@@ -218,7 +218,7 @@ class _ScanScreenState extends State<ScanScreen> {
         );
         if (userProductResponse.statusCode == 201) {
           print("Produit enregistré avec succès dans user/products.");
-          _fetchUserProducts();
+          _fetchUserProducts(token);
           _showSuccessDialog("Produit ajouté avec succès !");
         } else {
           print(
@@ -324,7 +324,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
       if (response.statusCode == 201) {
         print("Produit dupliqué avec succès.");
-        _fetchUserProducts();
+        _fetchUserProducts(token);
       } else {
         print(
             "Erreur lors de la duplication du produit (Code HTTP : ${response.statusCode}).");
@@ -359,7 +359,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         print("Produit supprimé avec succès.");
-        _fetchUserProducts();
+        _fetchUserProducts(token);
       } else if (response.statusCode == 404) {
         print("Produit introuvable (Code HTTP : 404).");
       } else {

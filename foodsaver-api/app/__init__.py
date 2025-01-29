@@ -19,12 +19,6 @@ def create_app():
     
     load_dotenv()
 
-    # # Utiliser les variables d'environnement
-    # MYSQL_HOST = os.getenv('MYSQL_HOST')
-    # MYSQL_PORT = os.getenv('MYSQL_PORT')
-    # MYSQL_USER = os.getenv('MYSQL_USER')
-    # MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
-    # MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
 
     ACCESS_EXPIRES = timedelta(hours=1)
 
@@ -33,18 +27,15 @@ def create_app():
 
     CORS(app, resources={r"/*": {"origins": "*"}})
 
-    #database_url = os.getenv("DATABASE_URL")
-    #if not database_url:
-     #   raise RuntimeError("La variable d'environnement DATABASE_URL n'est pas définie.")
+    database_url = os.getenv("DATABASE_URL")
+
     
-    #app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
  
 
-    #print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
+    print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
 
-    #conf local 
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://username:password@localhost/mydatabase'
 
 
    

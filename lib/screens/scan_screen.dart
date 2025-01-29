@@ -493,39 +493,41 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
-Future<List<Map<String, dynamic>>> _fetchRecipes(String? nameEng, String? dlc) async {
-  if (nameEng == null || dlc == null) {
+Future<List<Map<String, dynamic>>> _fetchRecipes(String? name_en, String? dlc) async {
+  if (name_en == null || dlc == null || name_en.isEmpty || dlc.isEmpty) {
+    print("⚠️ Nom de l'ingrédient ou DLC invalide.");
     return [];
   }
 
   try {
-    // Analyse de la date DLC
-    final now = DateTime.now();
-    final parsedDlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US').parse(dlc, true);
+    // Vérifier si l'ingrédient est bien formatté
+    final encodedIngredient = Uri.encodeComponent(name_en);
+    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/filter.php?i=$encodedIngredient');
 
-    // Vérifiez si la DLC est dans 3 jours ou moins
-    if (parsedDlc.difference(now).inDays > 3) {
-      return [];
-    }
+    print("🔍 URL API appelée : $url");
 
-    // Appel à l'API TheMealDB
-    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/filter.php?i=$nameEng');
+    // Appel à l'API
     final response = await http.get(url);
+    print("📨 Réponse API : ${response.body}");
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final Map<String, dynamic> data = jsonDecode(response.body);
 
-      if (data['meals'] != null) {
+      if (data.containsKey('meals') && data['meals'] != null) {
+        print("✅ Recettes trouvées : ${data['meals']}");
         return List<Map<String, dynamic>>.from(data['meals']);
+      } else {
+        print("⚠️ Aucune recette trouvée pour l'ingrédient : $name_en");
       }
+    } else {
+      print("❌ Erreur HTTP ${response.statusCode} : ${response.reasonPhrase}");
     }
   } catch (e) {
-    print("Erreur lors de la récupération des recettes : $e");
+    print("❌ Erreur lors de la récupération des recettes : $e");
   }
 
   return [];
 }
-
 
   @override
   Widget build(BuildContext context) {
@@ -574,59 +576,57 @@ Future<List<Map<String, dynamic>>> _fetchRecipes(String? nameEng, String? dlc) a
                                 vertical: 8.0, horizontal: 16.0),
                             child: ExpansionTile(
   title: Text(item['name_fr'] ?? "Nom inconnu"),
-  subtitle: Text("DLC: ${_formatDate(item['dlc'])}"),
-  trailing: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      IconButton(
-        icon: const Icon(Icons.copy),
-        onPressed: () => _duplicateProduct(item['id'].toString()),
-      ),
-      IconButton(
-        icon: const Icon(Icons.delete),
-        onPressed: () => _deleteProduct(item['id'].toString()),
-      ),
-    ],
-  ),
+subtitle: Text("DLC: ${_formatDate(item['dlc'])}"),
+trailing: Row(
+  mainAxisSize: MainAxisSize.min,
   children: [
-    FutureBuilder<List<Map<String, dynamic>>>(
-      future: _fetchRecipes(item['name_eng'], item['dlc']),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircularProgressIndicator(),
+    IconButton(
+      icon: const Icon(Icons.copy),
+      onPressed: () => _duplicateProduct(item['id'].toString()),
+    ),
+    IconButton(
+      icon: const Icon(Icons.delete),
+      onPressed: () => _deleteProduct(item['id'].toString()),
+    ),
+  ],
+),
+children: [
+  FutureBuilder<List<Map<String, dynamic>>>(
+    future: _fetchRecipes(item['name_en'] ?? item['name_fr'], item['dlc']),
+    builder: (context, snapshot) {
+      print("📡 Chargement des recettes pour : ${item['name_en']}");
+
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: CircularProgressIndicator(),
+        );
+      }
+
+      if (snapshot.hasError) {
+        print("❌ Erreur FutureBuilder : ${snapshot.error}");
+        return const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text("Erreur lors de la récupération des recettes."),
+        );
+      }
+
+      // Vérification si snapshot est vide
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text("Aucune recette trouvée."),
+        );
+      }
+
+         // Affichage des recettes trouvées
+      return Column(
+        children: snapshot.data!.map((recipe) {
+          return ListTile(
+            leading: Image.network(recipe['strMealThumb'], width: 50, height: 50),
+            title: Text(recipe['strMeal'] ?? "Nom inconnu"),
           );
-        }
-
-        if (snapshot.hasError) {
-          return const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Erreur lors de la récupération des recettes."),
-          );
-        }
-
-        final recipes = snapshot.data;
-
-        if (recipes == null || recipes.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Aucune recette trouvée."),
-          );
-        }
-
-        return Column(
-          children: recipes.map((recipe) {
-            return ListTile(
-              leading: Image.network(
-                recipe['strMealThumb'],
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-              ),
-              title: Text(recipe['strMeal']),
-            );
-          }).toList(),
+        }).toList(),
         );
       },
     ),

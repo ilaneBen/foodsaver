@@ -170,14 +170,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         Center(
-                          child: GestureDetector(
+                          child: InkWell(
                             onTap: () {
                               Navigator.pushNamed(context, SignUpScreen.id);
                             },
                             child: const Text(
                               "Vous avez pas encore de compte ?",
                               style: TextStyle(
-                                  color: Color.fromARGB(255, 0, 0, 0)),
+                                  color: Colors.blue,
+                                  )
                             ),
                           ),
                         ),

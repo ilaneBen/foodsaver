@@ -167,7 +167,8 @@ def get_user_products():
             "id": user_product.id,
             "product_id": user_product.product_id,
             "name_fr": user_product.product.name_fr,  # Supposez que vous avez une relation avec `Product`
-            "name_en": user_product.product.name_en,  # Supposez que vous avez une relation avec `Product`
+            "name_en": user_product.product.name_en,
+            "img_url": user_product.product.img_url,# Supposez que vous avez une relation avec `Product`
             "dlc": user_product.dlc,
             "brand": user_product.product.brand,
             "categories": user_product.product.categories

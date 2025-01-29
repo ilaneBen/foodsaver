@@ -18,9 +18,8 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
+  final storage = const FlutterSecureStorage();
   List<Map<String, dynamic>> scannedProducts = [];
-
-  get storage => null;
 
   @override
   void initState() {
@@ -41,7 +40,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   //Affichage des produits de la table user/products deja en BDD
   Future<void> _fetchUserProducts(String token) async {
-    
     try {
       final url = Uri.parse('$apiUrl/user/products');
       final response = await http.get(
@@ -75,7 +73,6 @@ class _ScanScreenState extends State<ScanScreen> {
     String? img_url,
     required String dlc,
   }) async {
-    final storage = const FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -83,10 +80,10 @@ class _ScanScreenState extends State<ScanScreen> {
       return;
     }
 
-      try {
-        final searchUrl = Uri.parse('$apiUrl/products/search');
-        final productsUrl = Uri.parse('$apiUrl/products');
-        final userProductsUrl = Uri.parse('$apiUrl/user/products');
+    try {
+      final searchUrl = Uri.parse('$apiUrl/products/search');
+      final productsUrl = Uri.parse('$apiUrl/products');
+      final userProductsUrl = Uri.parse('$apiUrl/user/products');
 
       // Rechercher le produit dans la BDD
       final queryParameters = {
@@ -200,31 +197,30 @@ class _ScanScreenState extends State<ScanScreen> {
       // Si une valeur est saisie, vous pouvez poursuivre votre logique
       print("DLC sélectionnée : $selectedDlc");
 
-        // Ajout dans user/products
-        final userProductResponse = await http.post(
-          userProductsUrl,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
-            'product_id': productId,
-            'dlc': selectedDlc,
-          }),
-        );
-        if (userProductResponse.statusCode == 201) {
-          print("Produit enregistré avec succès dans user/products.");
-          _fetchUserProducts(token);
-          _showSuccessDialog("Produit ajouté avec succès !");
-        } else {
-          print(
-              "Erreur lors de l'enregistrement dans user/products : ${userProductResponse.body}");
-        }
-      } catch (e) {
-        print("Erreur lors du traitement du produit : $e");
+      // Ajout dans user/products
+      final userProductResponse = await http.post(
+        userProductsUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'product_id': productId,
+          'dlc': selectedDlc,
+        }),
+      );
+      if (userProductResponse.statusCode == 201) {
+        print("Produit enregistré avec succès dans user/products.");
+        _fetchUserProducts(token);
+        _showSuccessDialog("Produit ajouté avec succès !");
+      } else {
+        print(
+            "Erreur lors de l'enregistrement dans user/products : ${userProductResponse.body}");
       }
+    } catch (e) {
+      print("Erreur lors du traitement du produit : $e");
+    }
   }
-
 
 //pop up pour la saisie de la date de péremption
   Future<String?> _promptDlcInput() async {
@@ -235,66 +231,70 @@ class _ScanScreenState extends State<ScanScreen> {
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text("Entrer la DLC",
-              style: TextStyle(color: Colors.black)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.calendar_today),
-                label: const Text("Sélectionner la date"),
-                onPressed: () async {
-                  final DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2100),
-                  );
-                  if (pickedDate != null && mounted) {
-                    setState(() {
-                      selectedDate = pickedDate;
-                      _dateController.text =
-                          "${pickedDate.day}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightBlueAccent,
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text("Entrer la DLC",
+                  style: TextStyle(color: Colors.black)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.calendar_today),
+                    label: const Text("Sélectionner la date"),
+                    onPressed: () async {
+                      final DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (pickedDate != null) {
+                        setState(() {
+                          selectedDate = pickedDate;
+                          _dateController.text =
+                              "${pickedDate.day}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightBlueAccent,
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  Padding(
+                    key: ValueKey(selectedDate),
+                    padding: const EdgeInsets.only(top: 10),
+                    child: TextField(
+                      controller: _dateController,
+                      decoration: InputDecoration(
+                          labelText: "Date sélectionnée:",
+                          filled: true,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30))),
+                      readOnly: true,
+                      enabled: false,
+                    ),
+                  ),
+                ],
               ),
-              Padding(
-                key: ValueKey(selectedDate),
-                padding: const EdgeInsets.only(top: 10),
-                child: TextField(
-                  controller: _dateController,
-                  decoration: InputDecoration(
-                      labelText: "Date sélectionnée:",
-                      filled: true,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30))),
-                  readOnly: true,
-                  enabled: false,
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Annuler"),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Annuler"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(selectedDate);
-              },
-              child: const Text("Valider"),
-            ),
-          ],
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(selectedDate);
+                  },
+                  child: const Text("Valider"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -304,7 +304,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   //fonction de duplication et suppression des produits
   Future<void> _duplicateProduct(String productId) async {
-    final storage = const FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -313,8 +312,7 @@ class _ScanScreenState extends State<ScanScreen> {
     }
 
     try {
-      final url =
-          Uri.parse('$apiUrl/user/products/duplicate/$productId');
+      final url = Uri.parse('$apiUrl/user/products/duplicate/$productId');
       final response = await http.post(
         url,
         headers: {'Authorization': 'Bearer $token'},
@@ -333,7 +331,6 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Future<void> _deleteProduct(String productId) async {
-    final storage = const FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -473,7 +470,6 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Future<String?> _getToken() async {
-    final storage = const FlutterSecureStorage();
     return await storage.read(key: 'auth_token');
   }
 
@@ -492,9 +488,16 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   // Ajoutez ici votre logique de déconnexion
-  void _logout() {
-    Navigator.pushReplacementNamed(
-        context, LoginScreen.id); // Redirige vers la page de connexion
+  void _logout() async {
+    try {
+      await storage.delete(key: 'auth_token'); // Suppression du token
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, LoginScreen.id);
+      }
+    } catch (e) {
+      print("Erreur lors de la déconnexion : $e");
+    }
   }
 
   @override

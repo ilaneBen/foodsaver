@@ -101,7 +101,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   Image.asset(
                   'assets/images/signup.png',
-                  width: MediaQuery.of(context).size.width - 570,
+                  width: MediaQuery.of(context).size.width - 575,
                   ),
                   Form(
                       key: _formKey,

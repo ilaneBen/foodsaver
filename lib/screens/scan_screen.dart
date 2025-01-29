@@ -425,14 +425,52 @@ String _formatDate(String? date) {
   if (date == null) return "Inconnu";
 
   try {
-    // Définir le format de la chaîne de date
-    final parsedDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parse(date, true);
+    // Définir le format de la chaîne RFC 1123
+    final parsedDate = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US').parse(date, true);
     // Retourner la date formatée
     return DateFormat('dd/MM/yyyy').format(parsedDate);
   } catch (e) {
+    print("Erreur lors de l'analyse de la date : $e");
     return "Invalide"; // En cas d'erreur
   }
 }
+
+
+
+Future<List<Map<String, dynamic>>> _fetchRecipes(String? nameEng, String? dlc) async {
+  if (nameEng == null || dlc == null) {
+    return [];
+  }
+
+  try {
+    // Analyse de la date DLC
+    final now = DateTime.now();
+    final parsedDlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", 'en_US').parse(dlc, true);
+
+    // Vérifiez si la DLC est dans 3 jours ou moins
+    if (parsedDlc.difference(now).inDays > 3) {
+      return [];
+    }
+
+    // Appel à l'API TheMealDB
+    final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/filter.php?i=$nameEng');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data['meals'] != null) {
+        return List<Map<String, dynamic>>.from(data['meals']);
+      }
+    }
+  } catch (e) {
+    print("Erreur lors de la récupération des recettes : $e");
+  }
+
+  return [];
+}
+
+
   @override
   Widget build(BuildContext context) {
     
@@ -478,30 +516,67 @@ String _formatDate(String? date) {
                           return Card(
                             margin: const EdgeInsets.symmetric(
                                 vertical: 8.0, horizontal: 16.0),
-                            child: ListTile(
-                              title: Text(item['name_fr'] ?? "Nom inconnu"),
-                              subtitle: Text(
-  "DLC: ${_formatDate(item['dlc'])}",
-),
+                            child: ExpansionTile(
+  title: Text(item['name_fr'] ?? "Nom inconnu"),
+  subtitle: Text("DLC: ${_formatDate(item['dlc'])}"),
+  trailing: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IconButton(
+        icon: const Icon(Icons.copy),
+        onPressed: () => _duplicateProduct(item['id'].toString()),
+      ),
+      IconButton(
+        icon: const Icon(Icons.delete),
+        onPressed: () => _deleteProduct(item['id'], token!),
+      ),
+    ],
+  ),
+  children: [
+    FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchRecipes(item['name_eng'], item['dlc']),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: CircularProgressIndicator(),
+          );
+        }
 
+        if (snapshot.hasError) {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Erreur lors de la récupération des recettes."),
+          );
+        }
 
+        final recipes = snapshot.data;
 
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.copy),
-                                    onPressed: () => _duplicateProduct(
-                                        item['id'].toString()),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () =>
-                                        _deleteProduct(item['id'], token!),
-                                  ),
-                                ],
-                              ),
-                            ),
+        if (recipes == null || recipes.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Aucune recette trouvée."),
+          );
+        }
+
+        return Column(
+          children: recipes.map((recipe) {
+            return ListTile(
+              leading: Image.network(
+                recipe['strMealThumb'],
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+              ),
+              title: Text(recipe['strMeal']),
+            );
+          }).toList(),
+        );
+      },
+    ),
+  ],
+)
+
                           );
                         },
                       ),

@@ -18,6 +18,7 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
+  final storage = FlutterSecureStorage();
   List<Map<String, dynamic>> scannedProducts = [];
 
   @override
@@ -28,7 +29,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   //Affichage des produits de la table user/products deja en BDD
   Future<void> _fetchUserProducts() async {
-    const storage = FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -485,9 +485,15 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   // Ajoutez ici votre logique de déconnexion
-  void _logout() {
-    Navigator.pushReplacementNamed(
-        context, LoginScreen.id); // Redirige vers la page de connexion
+  void _logout() async {
+    try {
+      await storage.delete(key: 'auth_token'); // Suppression du token
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, LoginScreen.id);
+      }
+    } catch (e) {
+      print("Erreur lors de la déconnexion : $e");
+    }
   }
 
   @override

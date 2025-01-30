@@ -42,3 +42,4 @@ app.*.map.json
 /android/app/release
 foodsaver-api/app/__init__.py
 lib/constants.dart
+build/cache.dill.track.dill

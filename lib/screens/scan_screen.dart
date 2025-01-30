@@ -800,7 +800,7 @@ AppBar(
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               return Image.asset(
-                'build/web/assets/assets/images/defaut.jpg',
+                '${prefixImage}assets/images/defaut.jpg',
                 width: 50,
                 height: 50,
                 fit: BoxFit.cover,
@@ -808,7 +808,7 @@ AppBar(
             },
           )
         : Image.asset(
-            'build/web/assets/assets/images/defaut.jpg',
+            '${prefixImage}assets/images/defaut.jpg',
             width: 50,
             height: 50,
             fit: BoxFit.cover,

@@ -27,19 +27,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isPasswordVisible2 = false;
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+  setState(() {
+    _isLoading = true;
+    _errorMessage = '';
+  });
 
-    final email = _emailController.text;
-    final password = _passwordController.text;
+  final email = _emailController.text;
+  final password = _passwordController.text;
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/register'),
+        Uri.parse('$apiUrl/register'), // Assurez-vous que $apiUrl est correct
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
@@ -48,7 +48,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
         signUpAlert(
           context: context,
           title: 'Registration Successful',
@@ -100,7 +99,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Image.asset(
-                  'assets/images/signup.png',
+                  '${prefixImage}assets/images/signup.png',
                   width: MediaQuery.of(context).size.width - 575,
                   ),
                   Form(
@@ -235,6 +234,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                       ),
                     ),
+
                 ],
               ),
             ),

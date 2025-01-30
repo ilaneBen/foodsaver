@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '/screens/login_screen.dart';
 import '/constants.dart';
+import 'package:intl/intl.dart';
+import 'package:badges/badges.dart' as badges;
 
 class ScanScreen extends StatefulWidget {
   static const String id = 'scan_screen';
@@ -24,41 +25,55 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchUserProducts();
+    _checkAuthentication();
   }
 
-  //Affichage des produits de la table user/products deja en BDD
-  Future<void> _fetchUserProducts() async {
+  /// Vérifie si l'utilisateur est connecté
+  Future<void> _checkAuthentication() async {
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
-      print("Erreur : Token d'authentification non trouvé.");
+      Navigator.pushReplacementNamed(context, LoginScreen.id);
       return;
     }
-
-    try {
-      final url = Uri.parse('http://127.0.0.1:5000/user/products');
-      final response = await http.get(
-        url,
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> products = jsonDecode(response.body);
-        setState(() {
-          scannedProducts = products
-              .map((product) => Map<String, dynamic>.from(product))
-              .toList();
-        });
-        print(('userproduct: $scannedProducts'));
-      } else {
-        print(
-            "Erreur lors de la récupération des produits (Code HTTP : ${response.statusCode}).");
-      }
-    } catch (e) {
-      print("Erreur réseau lors de la récupération des produits : $e");
-    }
+    _fetchUserProducts(token);
   }
+
+//Affichage des produits de la table user/products deja en BDD
+Future<void> _fetchUserProducts(String token) async {
+  try {
+    final url = Uri.parse('$apiUrl/user/products');
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> products = jsonDecode(response.body);
+
+      setState(() {
+        // Convertir les produits en une liste de Map<String, dynamic>
+        scannedProducts = products
+            .map((product) => Map<String, dynamic>.from(product))
+            .toList();
+
+        // Trier les produits par DLC (du plus périmé au moins périmé)
+        scannedProducts.sort((a, b) {
+          DateTime dlcA = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(a['dlc']);
+          DateTime dlcB = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(b['dlc']);
+          return dlcA.compareTo(dlcB); // Trier du plus ancien au plus récent
+        });
+      });
+
+      print('🔹 Produits triés : $scannedProducts');
+    } else {
+      print("❌ Erreur HTTP (${response.statusCode}) lors de la récupération des produits.");
+    }
+  } catch (e) {
+    print("❌ Erreur réseau : $e");
+  }
+}
+
 
   //fonction de verification et enregistrement des produits dans la bdd
   Future<void> _handleProductSubmission({
@@ -69,7 +84,6 @@ class _ScanScreenState extends State<ScanScreen> {
     String? img_url,
     required String dlc,
   }) async {
-    final storage = const FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -78,9 +92,9 @@ class _ScanScreenState extends State<ScanScreen> {
     }
 
     try {
-      final searchUrl = Uri.parse('http://127.0.0.1:5000/products/search');
-      final productsUrl = Uri.parse('http://127.0.0.1:5000/products');
-      final userProductsUrl = Uri.parse('http://127.0.0.1:5000/user/products');
+      final searchUrl = Uri.parse('$apiUrl/products/search');
+      final productsUrl = Uri.parse('$apiUrl/products');
+      final userProductsUrl = Uri.parse('$apiUrl/user/products');
 
       // Rechercher le produit dans la BDD
       final queryParameters = {
@@ -135,6 +149,7 @@ class _ScanScreenState extends State<ScanScreen> {
             'name_fr': nameFr,
             'categories': categories,
             'brand': brand,
+            'img_url': img_url,
           }),
         );
 
@@ -208,7 +223,7 @@ class _ScanScreenState extends State<ScanScreen> {
       );
       if (userProductResponse.statusCode == 201) {
         print("Produit enregistré avec succès dans user/products.");
-        _fetchUserProducts();
+        _fetchUserProducts(token);
         _showSuccessDialog("Produit ajouté avec succès !");
       } else {
         print(
@@ -228,66 +243,70 @@ class _ScanScreenState extends State<ScanScreen> {
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text("Entrer la DLC",
-              style: TextStyle(color: Colors.black)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.calendar_today),
-                label: const Text("Sélectionner la date"),
-                onPressed: () async {
-                  final DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2100),
-                  );
-                  if (pickedDate != null && mounted) {
-                    setState(() {
-                      selectedDate = pickedDate;
-                      _dateController.text =
-                          "${pickedDate.day}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightBlueAccent,
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text("Entrer la DLC",
+                  style: TextStyle(color: Colors.black)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.calendar_today),
+                    label: const Text("Sélectionner la date"),
+                    onPressed: () async {
+                      final DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (pickedDate != null) {
+                        setState(() {
+                          selectedDate = pickedDate;
+                          _dateController.text =
+                              "${pickedDate.day}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}";
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightBlueAccent,
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  Padding(
+                    key: ValueKey(selectedDate),
+                    padding: const EdgeInsets.only(top: 10),
+                    child: TextField(
+                      controller: _dateController,
+                      decoration: InputDecoration(
+                          labelText: "Date sélectionnée:",
+                          filled: true,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30))),
+                      readOnly: true,
+                      enabled: false,
+                    ),
+                  ),
+                ],
               ),
-              Padding(
-                key: ValueKey(selectedDate),
-                padding: const EdgeInsets.only(top: 10),
-                child: TextField(
-                  controller: _dateController,
-                  decoration: InputDecoration(
-                      labelText: "Date sélectionnée:",
-                      filled: true,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30))),
-                  readOnly: true,
-                  enabled: false,
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Annuler"),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Annuler"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(selectedDate);
-              },
-              child: const Text("Valider"),
-            ),
-          ],
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(selectedDate);
+                  },
+                  child: const Text("Valider"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -297,7 +316,6 @@ class _ScanScreenState extends State<ScanScreen> {
 
   //fonction de duplication et suppression des produits
   Future<void> _duplicateProduct(String productId) async {
-    final storage = const FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -306,8 +324,7 @@ class _ScanScreenState extends State<ScanScreen> {
     }
 
     try {
-      final url =
-          Uri.parse('http://127.0.0.1:5000/user/products/duplicate/$productId');
+      final url = Uri.parse('$apiUrl/user/products/duplicate/$productId');
       final response = await http.post(
         url,
         headers: {'Authorization': 'Bearer $token'},
@@ -315,7 +332,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
       if (response.statusCode == 201) {
         print("Produit dupliqué avec succès.");
-        _fetchUserProducts();
+        _fetchUserProducts(token);
       } else {
         print(
             "Erreur lors de la duplication du produit (Code HTTP : ${response.statusCode}).");
@@ -325,8 +342,7 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
-  Future<void> _deleteProduct(String productId, int index) async {
-    final storage = const FlutterSecureStorage();
+  Future<void> _deleteProduct(String productId) async {
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -342,7 +358,7 @@ class _ScanScreenState extends State<ScanScreen> {
     try {
       print('Suppression du produit: $productId avec le token: $token');
 
-      final url = Uri.parse('http://127.0.0.1:5000/user/products/$productId');
+      final url = Uri.parse('$apiUrl/user/products/$productId');
       final response = await http.delete(
         url,
         headers: {'Authorization': 'Bearer $token'},
@@ -371,6 +387,7 @@ class _ScanScreenState extends State<ScanScreen> {
     String? productName;
     String? brand;
     String? categories;
+    String? barcode;
 
     await showDialog(
       context: context,
@@ -392,6 +409,10 @@ class _ScanScreenState extends State<ScanScreen> {
                 decoration: const InputDecoration(labelText: "Catégories"),
                 onChanged: (value) => categories = value,
               ),
+               TextField(
+                decoration: const InputDecoration(labelText: "Code Barre"),
+                onChanged: (value) => barcode = value,
+              ),
             ],
           ),
           actions: [
@@ -399,7 +420,7 @@ class _ScanScreenState extends State<ScanScreen> {
               onPressed: () async {
                 if (productName != null) {
                   await _handleProductSubmission(
-                    barcode: null,
+                    barcode: barcode,
                     nameFr: productName!,
                     categories: categories,
                     brand: brand,
@@ -432,6 +453,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 nameFr: "", // Remplir avec un nom par défaut si nécessaire
                 categories: null,
                 brand: null,
+                img_url: null,
                 dlc: "", // Remplir avec une DLC par défaut si nécessaire
               );
               Navigator.of(context, rootNavigator: true).pop();
@@ -440,12 +462,13 @@ class _ScanScreenState extends State<ScanScreen> {
         },
       ),
     ));
-    //DEBUG - Code bar en dur
+    //DEBUG
     // _handleProductSubmission(
-    //             barcode: "8594001022038",
+    //             barcode: "3175681186583",
     //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
     //             categories: null,
     //             brand: null,
+    //             img_url: null,
     //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
     //           );
   }
@@ -470,7 +493,6 @@ class _ScanScreenState extends State<ScanScreen> {
   }
 
   Future<String?> _getToken() async {
-    final storage = const FlutterSecureStorage();
     return await storage.read(key: 'auth_token');
   }
 
@@ -492,6 +514,7 @@ class _ScanScreenState extends State<ScanScreen> {
   void _logout() async {
     try {
       await storage.delete(key: 'auth_token'); // Suppression du token
+
       if (mounted) {
         Navigator.pushReplacementNamed(context, LoginScreen.id);
       }
@@ -500,22 +523,236 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  Future<List<Map<String, dynamic>>> _fetchRecipes(
+      String? name_en, String? dlc) async {
+    if (name_en == null || dlc == null || name_en.isEmpty || dlc.isEmpty) {
+      print("⚠️ Nom de l'ingrédient ou DLC invalide.");
+      return [];
+    }
+
+    try {
+      // Vérifier si l'ingrédient est bien formatté
+      final encodedIngredient = Uri.encodeComponent(name_en);
+      final url = Uri.parse(
+          'https://www.themealdb.com/api/json/v1/1/filter.php?i=$encodedIngredient');
+
+      print("🔍 URL API appelée : $url");
+
+      // Appel à l'API
+      final response = await http.get(url);
+      print("📨 Réponse API : ${response.body}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (data.containsKey('meals') && data['meals'] != null) {
+          print("✅ Recettes trouvées : ${data['meals']}");
+          return List<Map<String, dynamic>>.from(data['meals']);
+        } else {
+          print("⚠️ Aucune recette trouvée pour l'ingrédient : $name_en");
+        }
+      } else {
+        print(
+            "❌ Erreur HTTP ${response.statusCode} : ${response.reasonPhrase}");
+      }
+    } catch (e) {
+      print("❌ Erreur lors de la récupération des recettes : $e");
+    }
+
+    return [];
+  }
+
+
+Future<Map<String, dynamic>?> _fetchRecipeDetails(String idMeal) async {
+  final url = Uri.parse('https://www.themealdb.com/api/json/v1/1/lookup.php?i=$idMeal');
+
+  try {
+    final response = await http.get(url);
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data['meals'] != null && data['meals'].isNotEmpty) {
+        return data['meals'][0]; // Retourne les détails de la recette
+      }
+    }
+  } catch (e) {
+    print("❌ Erreur lors de la récupération des détails de la recette : $e");
+  }
+
+  return null; // Retourne `null` en cas d'erreur
+}
+
+int _countExpiringSoon(List<Map<String, dynamic>> scannedProducts) {
+  final now = DateTime.now();
+  final threeDaysLater = now.add(Duration(days: 3));
+
+  return scannedProducts.where((item) {
+    if (item['dlc'] == null) return false;
+
+    DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
+    return dlc.isBefore(threeDaysLater) && dlc.isAfter(now);
+  }).length;
+}
+
+int _countExpired(List<Map<String, dynamic>> scannedProducts) {
+  final now = DateTime.now(); // Date actuelle
+
+  return scannedProducts.where((item) {
+    if (item['dlc'] == null) return false;
+
+    DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
+    
+    return dlc.isBefore(now); // Si la DLC est avant aujourd'hui, c'est périmé
+  }).length;
+}
+
+
+
+void _showExpiringSoonDialog(BuildContext context) {
+  final now = DateTime.now();
+  final threeDaysLater = now.add(Duration(days: 3));
+
+  List<Map<String, dynamic>> expiringProducts = scannedProducts.where((item) {
+    if (item['dlc'] == null) return false;
+
+    DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
+    return dlc.isBefore(threeDaysLater) && dlc.isAfter(now);
+  }).toList();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Produits périmant bientôt"),
+        content: expiringProducts.isEmpty
+            ? Text("Aucun produit ne périme dans les 3 jours.")
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: expiringProducts.map((product) {
+                  return ListTile(
+                    leading: product['img_url'] != null
+                        ? Image.network(product['img_url'], width: 40, height: 40)
+                        : Icon(Icons.fastfood),
+                    title: Text(product['name_fr'] ?? "Nom inconnu"),
+                    subtitle: Text("DLC: ${_formatDate(product['dlc'])}"),
+                  );
+                }).toList(),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Fermer"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+void _showExpiredDialog(BuildContext context) {
+  final now = DateTime.now();
+
+  List<Map<String, dynamic>> expiredProducts = scannedProducts.where((item) {
+    if (item['dlc'] == null) return false;
+
+    DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
+    
+    return dlc.isBefore(now);
+  }).toList();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Produits périmés"),
+        content: expiredProducts.isEmpty
+            ? Text("Aucun produit périmé.")
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: expiredProducts.map((product) {
+                  return ListTile(
+                    leading: product['img_url'] != null
+                        ? Image.network(product['img_url'], width: 40, height: 40)
+                        : Icon(Icons.fastfood),
+                    title: Text(product['name_fr'] ?? "Nom inconnu"),
+                    subtitle: Text("DLC: ${_formatDate(product['dlc'])}"),
+                  );
+                }).toList(),
+              ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Fermer"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: kTextColor,
-        title: const Text(
-          'Scanner Foodsaver',
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.logout),
-          onPressed: _logout,
+      appBar:
+AppBar(
+  backgroundColor: kTextColor,
+  title: const Text(
+    'Scanner Foodsaver',
+    style: TextStyle(color: Colors.white),
+  ),
+  centerTitle: true,
+  leading: IconButton(
+    icon: Icon(Icons.logout),
+    onPressed: _logout,
+  ),
+  actions: [
+    Padding(
+      padding: const EdgeInsets.only(right: 20.0),
+      child: GestureDetector(
+        onTap: () {
+          _showExpiringSoonDialog(context); // Ouvre la liste des produits périmant bientôt
+        },
+        child: badges.Badge(
+          badgeContent: Text(
+            _countExpiringSoon(scannedProducts).toString(),
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          showBadge: _countExpiringSoon(scannedProducts) > 0,
+          badgeStyle: badges.BadgeStyle(
+            badgeColor: Colors.red,
+          ),
+          position: badges.BadgePosition.topEnd(top: 0, end: 0),
+          child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
         ),
       ),
+    ),
+    Padding(
+      padding: const EdgeInsets.only(right: 20.0),
+      child: GestureDetector(
+        onTap: () {
+          _showExpiredDialog(context); // Ouvre la liste des produits périmant bientôt
+        },
+        child: badges.Badge(
+          badgeContent: Text(
+            _countExpired(scannedProducts).toString(),
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          showBadge: _countExpired(scannedProducts) > 0,
+          badgeStyle: badges.BadgeStyle(
+            badgeColor: Colors.orange,
+          ),
+          position: badges.BadgePosition.topEnd(top: 0, end: 0),
+          child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+        ),
+      ),
+    ),
+  ],
+),
+
       body: FutureBuilder<String?>(
         future: _getToken(),
         builder: (context, snapshot) {
@@ -542,30 +779,190 @@ class _ScanScreenState extends State<ScanScreen> {
                         itemCount: scannedProducts.length,
                         itemBuilder: (context, index) {
                           final item = scannedProducts[index];
+                               DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
+
                           return Card(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 16.0),
-                            child: ListTile(
-                              title: Text(item['name_fr'] ?? "Nom inconnu"),
-                              subtitle: Text(
-                                "DLC: ${_formatDate(item['dlc'])}",
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.copy),
-                                    onPressed: () => _duplicateProduct(
-                                        item['id'].toString()),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () =>
-                                        _deleteProduct(item['id'].toString(), index),
-                                  ),
-                                ],
-                              ),
+                              margin: const EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 16.0),
+                              child:
+                              
+                              Container(
+                                color: Colors.white,
+                                child: 
+                                Column(
+                                  children: [
+                              
+                               ExpansionTile(
+                               trailing: SizedBox.shrink(),
+  leading: ClipRRect(
+    borderRadius: BorderRadius.circular(8.0),
+    child: item['img_url'] != null && item['img_url'].isNotEmpty
+        ? Image.network(
+            item['img_url'],
+            width: 50,
+            height: 50,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                '${prefixImage}assets/images/defaut.jpg',
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+              );
+            },
+          )
+        : Image.asset(
+            '${prefixImage}assets/images/defaut.jpg',
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+          ),
+  ),
+  title: Text(item['name_fr'] ?? "Nom inconnu"),
+  subtitle: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      dlc.isBefore(DateTime.now())
+          ? Text(
+              "Produit périmé",
+              style: TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
+            )
+          : Text(
+              "DLC: ${_formatDate(item['dlc'])}",
+              style: TextStyle(fontSize: 16),
+            ),
+             FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchRecipes(item['name_en'] ?? '', item['dlc']),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return 
+          Center(
+         child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
+           ); // Ne rien afficher pendant le chargement
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+   return 
+          Center(
+         child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
+           ); // Ne rien afficher pendant le chargement 
+                  }
+
+        // Affichage de "Recettes" et de l'icône seulement si des recettes existent
+        return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+
+          children: [
+            Text(
+              'Recettes',
+              style: TextStyle(color: Colors.green, fontSize: 15),
+            ),
+            Icon(Icons.arrow_drop_down),
+          ],
+        );
+      },
+    ),
+    ],
+  ),
+  
+  children: [
+    // FutureBuilder pour afficher les recettes
+    FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchRecipes(item['name_en'] ?? '', item['dlc']),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              'Aucune recette disponible',
+              style: TextStyle(color: Colors.red, fontSize: 15),
+            ),
+          );
+        }
+
+        // ExpansionTile pour afficher les recettes
+        return Column(
+          children: snapshot.data!.map((recipe) {
+            return ExpansionTile(
+            
+              leading: Image.network(recipe['strMealThumb'], width: 50, height: 50),
+              title: Text(recipe['strMeal'] ?? "Nom inconnu"),
+              children: [
+                // FutureBuilder pour afficher les détails de la recette
+                FutureBuilder<Map<String, dynamic>?>(
+                    future: _fetchRecipeDetails(recipe['idMeal']),
+                    builder: (context, detailsSnapshot) {
+                      if (detailsSnapshot.connectionState == ConnectionState.waiting) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      if (!detailsSnapshot.hasData || detailsSnapshot.data == null) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text("Aucune information détaillée trouvée."),
+                        );
+                      }
+
+                      final recipeDetails = detailsSnapshot.data!;
+
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                              Text(
+                              "Ingrédients :",
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
+                            ...List.generate(20, (index) {
+                              final ingredient = recipeDetails['strIngredient${index + 1}'];
+                              final measure = recipeDetails['strMeasure${index + 1}'];
+
+                              if (ingredient != null && ingredient.isNotEmpty) {
+                                return Text("$measure $ingredient");
+                              }
+                              return SizedBox.shrink();
+                            }),
+                            Text(
+                              "Instructions :",
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Text(recipeDetails['strInstructions'] ?? "Aucune instruction disponible"),
+
+                            SizedBox(height: 10),
+
+                          
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                
+              ],
+            );
+          }).toList(),
+        );
+      },
+    ),
+  ],
+),
+
+                              
+                                   
+                     
+                                ],
+                                )
+                                 )
                           );
                         },
                       ),

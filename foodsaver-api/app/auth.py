@@ -40,7 +40,6 @@ def register():
     return jsonify({"msg": "User created successfully"}), 201
 
 
-
 @auth.route("/logout", methods=["DELETE"])
 @jwt_required()
 def modify_token():

@@ -17,7 +17,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Scanner OpenFoodFacts',
+      debugShowCheckedModeBanner: false,
+      title: 'Scanner FoodSaver',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -33,4 +34,6 @@ class MyApp extends StatelessWidget {
       },
     );
   }
+
+  
 }

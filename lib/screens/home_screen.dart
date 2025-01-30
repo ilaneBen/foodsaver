@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants.dart';
 import '/components/components.dart';
 import '/screens/login_screen.dart';
 import '/screens/signup_screen.dart';
@@ -19,7 +20,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Image.asset(
-                  'assets/images/home.jpg',
+                  '${prefixImage}assets/images/home.jpg',
                   height: MediaQuery.of(context).size.height - 321, 
                 ),
               Expanded(

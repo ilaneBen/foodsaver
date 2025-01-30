@@ -205,7 +205,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   validator: (value) {
                                     if (value != _passwordController.text) {
-                                      return 'Mots de passes inconsistentes';
+                                      return 'Mots de passes ne correspondent pas';
                                     }
                                     return null;
                                   },

@@ -29,8 +29,6 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/lib/constants.dart
-
 
 # Symbolication related
 app.*.symbols
@@ -42,3 +40,5 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+foodsaver-api/app/__init__.py
+lib/constants.dart

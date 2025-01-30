@@ -18,7 +18,7 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  final storage = const FlutterSecureStorage();
+  final storage = FlutterSecureStorage();
   List<Map<String, dynamic>> scannedProducts = [];
 
   @override

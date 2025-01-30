@@ -131,10 +131,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Please enter your email';
+                                      return 'Veuillez entrer votre email';
                                     } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
                                         .hasMatch(value)) {
-                                      return 'Please enter a valid email';
+                                      return 'Veuillez entrer un email valid';
                                     }
                                     return null;
                                   },
@@ -169,7 +169,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'Please enter your password';
+                                      return 'Veuillez entrer votre mot de passe';
                                     }
                                     return null;
                                   },
@@ -204,22 +204,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                   validator: (value) {
                                     if (value != _passwordController.text) {
-                                      return 'Passwords do not match';
+                                      return 'Mots de passes ne correspondent pas';
                                     }
                                     return null;
                                   },
                                 ),
                               ),
                             ),
-                            CustomBottomScreen(
-                              textButton: 'S\'inscrire',
-                              heroTag: 'signup_btn',
-                              question: 'Vous avez déjà un compte ?',
-                              buttonPressed: _register,
-                              questionPressed: () {
-                                Navigator.pushNamed(context, LoginScreen.id);
-                              },
-                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 10),
+                                  child: InkWell(
+                                    child: const Text('Vous avez déjà un compte ?',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                      )
+                                    ),
+                                    onTap: () {Navigator.pushNamed(context, LoginScreen.id);},
+                                  ),
+                                ),
+                                CustomButton(
+                                  buttonText: 'S\'inscrire',
+                                  onPressed: _register,
+                                ),
+                            ],),
                           ],
                         ),
                       ),

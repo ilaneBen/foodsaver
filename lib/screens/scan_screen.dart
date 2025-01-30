@@ -366,7 +366,11 @@ Future<void> _fetchUserProducts(String token) async {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         print("Produit supprimé avec succès.");
-        _fetchUserProducts(token);
+        _fetchUserProducts();
+        // Mise à jour de la liste des produits
+        setState(() {
+          scannedProducts.removeAt(index);
+        });
       } else if (response.statusCode == 404) {
         print("Produit introuvable (Code HTTP : 404).");
       } else {

@@ -106,7 +106,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Form(
                       key: _formKey,
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 20, right: 20, left: 15),
+                        padding: const EdgeInsets.only(right: 20, left: 15),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.center,

@@ -10,7 +10,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
 
 # DEBUG ou PROD ?
-modeDebug = False #Switch entre True et False pour signifier si on est en mode debug ou non (Prod)
+modeDebug = True #Switch entre True et False pour signifier si on est en mode debug ou non (Prod)
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -57,13 +57,14 @@ def create_app():
     jwt = JWTManager(app)
 
     # Initialiser les extensions
+    print("db.innit_app")
     db.init_app(app)
     
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
     
+    migrate.init_app(app, db)
+
     if (modeDebug) : 
-        # Creation de la BDD local
-        migrate.init_app(app, db)
         # Swagger configuration
         SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
         API_URL = "/static/swagger.yaml"  # Path to your Swagger spec

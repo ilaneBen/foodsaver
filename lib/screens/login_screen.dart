@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Image.asset(
-                  '../build/web/assets/assets/images/welcome.png',
+                  '${prefixImage}assets/assets/images/welcome.png',
                   width: MediaQuery.of(context).size.width - 585,
                 ),
                 Padding(

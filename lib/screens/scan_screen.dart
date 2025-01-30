@@ -425,37 +425,37 @@ class _ScanScreenState extends State<ScanScreen> {
 
   //ajout via scan
   void _scanBarcode() async {
-    // if (!mounted) return;
+    if (!mounted) return;
 
-    // await Navigator.of(context).push(MaterialPageRoute(
-    //   builder: (_) => MobileScanner(
-    //     onDetect: (barcodeCapture) {
-    //       if (barcodeCapture.barcodes.isNotEmpty) {
-    //         final barcode = barcodeCapture.barcodes.first;
-    //         if (barcode.rawValue != null && mounted) {
-    //           _handleProductSubmission(
-    //             barcode: barcode.rawValue!,
-    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
-    //             categories: null,
-    //             brand: null,
-    //             img_url: null,
-    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
-    //           );
-    //           Navigator.of(context, rootNavigator: true).pop();
-    //         }
-    //       }
-    //     },
-    //   ),
-    // ));
-    //DEBUG
-    _handleProductSubmission(
-                barcode: "3175681186583",
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MobileScanner(
+        onDetect: (barcodeCapture) {
+          if (barcodeCapture.barcodes.isNotEmpty) {
+            final barcode = barcodeCapture.barcodes.first;
+            if (barcode.rawValue != null && mounted) {
+              _handleProductSubmission(
+                barcode: barcode.rawValue!,
                 nameFr: "", // Remplir avec un nom par défaut si nécessaire
                 categories: null,
                 brand: null,
                 img_url: null,
                 dlc: "", // Remplir avec une DLC par défaut si nécessaire
               );
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+          }
+        },
+      ),
+    ));
+    //DEBUG
+    // _handleProductSubmission(
+    //             barcode: "3175681186583",
+    //             nameFr: "", // Remplir avec un nom par défaut si nécessaire
+    //             categories: null,
+    //             brand: null,
+    //             img_url: null,
+    //             dlc: "", // Remplir avec une DLC par défaut si nécessaire
+    //           );
   }
 
   //pop up de confirmation
@@ -606,7 +606,7 @@ class _ScanScreenState extends State<ScanScreen> {
                                           errorBuilder:
                                               (context, error, stackTrace) {
                                             return Image.asset(
-                                              '../build/web/assets/assets/images/defaut.jpg', // Image par défaut en cas d'erreur
+                                              '${prefixImage}assets/images/defaut.jpg', // Image par défaut en cas d'erreur
                                               width: 50,
                                               height: 50,
                                               fit: BoxFit.contain,
@@ -614,7 +614,7 @@ class _ScanScreenState extends State<ScanScreen> {
                                           },
                                         )
                                       : Image.asset(
-                                          '../build/web/assets/assets/images/defaut.jpg', // Image par défaut si img_url est nul
+                                          '${prefixImage}assets/assets/images/defaut.jpg', // Image par défaut si img_url est nul
                                           width: 50,
                                           height: 50,
                                           fit: BoxFit.contain,

@@ -99,7 +99,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Image.asset(
-                  '../build/web/assets/assets/images/signup.png',
+                  '${prefixImage}assets/images/signup.png',
                   width: MediaQuery.of(context).size.width - 575,
                   ),
                   Form(

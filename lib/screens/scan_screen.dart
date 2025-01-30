@@ -696,8 +696,10 @@ AppBar(
     onPressed: _logout,
   ),
   actions: [
-    Padding(
+     _countExpiringSoon(scannedProducts) > 0 ?
+    Container(
       padding: const EdgeInsets.only(right: 20.0),
+      margin: const EdgeInsets.only(right: 20.0),
       child: GestureDetector(
         onTap: () {
           _showExpiringSoonDialog(context); // Ouvre la liste des produits périmant bientôt
@@ -709,15 +711,20 @@ AppBar(
           ),
           showBadge: _countExpiringSoon(scannedProducts) > 0,
           badgeStyle: badges.BadgeStyle(
-            badgeColor: Colors.red,
+            badgeColor: Colors.orange,
           ),
           position: badges.BadgePosition.topEnd(top: 0, end: 0),
-          child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+          child: Icon(Icons.fastfood_outlined, size: 28, color: Colors.white), // Icône d'alerte
         ),
       ),
-    ),
-    Padding(
+    ) :
+    SizedBox.shrink(),
+
+    
+     _countExpired(scannedProducts) > 0 ?
+    Container(
       padding: const EdgeInsets.only(right: 20.0),
+      margin: const EdgeInsets.only(right: 20.0),
       child: GestureDetector(
         onTap: () {
           _showExpiredDialog(context); // Ouvre la liste des produits périmant bientôt
@@ -729,13 +736,14 @@ AppBar(
           ),
           showBadge: _countExpired(scannedProducts) > 0,
           badgeStyle: badges.BadgeStyle(
-            badgeColor: Colors.orange,
+            badgeColor: Colors.red,
           ),
           position: badges.BadgePosition.topEnd(top: 0, end: 0),
-          child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+          child: Icon(Icons.fastfood_outlined, size: 28, color: Colors.white), // Icône d'alerte
         ),
       ),
-    ),
+    ) :
+    SizedBox.shrink(),
   ],
 ),
 
@@ -789,20 +797,10 @@ AppBar(
             height: 50,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              return Image.asset(
-                'build/web/assets/assets/images/defaut.jpg',
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-              );
+              return Icon(Icons.fastfood);
             },
           )
-        : Image.asset(
-            'build/web/assets/assets/images/defaut.jpg',
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
-          ),
+        : Icon(Icons.fastfood)
   ),
   title: Text(item['name_fr'] ?? "Nom inconnu"),
   subtitle: Column(

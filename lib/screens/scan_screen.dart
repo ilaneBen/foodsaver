@@ -325,7 +325,7 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
-  Future<void> _deleteProduct(String productId) async {
+  Future<void> _deleteProduct(String productId, int index) async {
     final storage = const FlutterSecureStorage();
     final token = await storage.read(key: 'auth_token');
 
@@ -351,6 +351,10 @@ class _ScanScreenState extends State<ScanScreen> {
       if (response.statusCode == 200 || response.statusCode == 204) {
         print("Produit supprimé avec succès.");
         _fetchUserProducts();
+        // Mise à jour de la liste des produits
+        setState(() {
+          scannedProducts.removeAt(index);
+        });
       } else if (response.statusCode == 404) {
         print("Produit introuvable (Code HTTP : 404).");
       } else {
@@ -557,7 +561,7 @@ class _ScanScreenState extends State<ScanScreen> {
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () =>
-                                        _deleteProduct(item['id'].toString()),
+                                        _deleteProduct(item['id'].toString(), index),
                                   ),
                                 ],
                               ),

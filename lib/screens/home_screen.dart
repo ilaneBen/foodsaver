@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Image.asset(
-                  'assets/images/home.jpg',
+                  '../build/web/assets/assets/images/home.jpg',
                   height: MediaQuery.of(context).size.height - 321, 
                 ),
               Expanded(

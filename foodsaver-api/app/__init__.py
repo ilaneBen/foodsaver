@@ -2,12 +2,15 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-
+ 
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
+
+# DEBUG ou PROD ?
+modeDebug = True
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -19,7 +22,6 @@ def create_app():
     
     load_dotenv()
 
-
     ACCESS_EXPIRES = timedelta(hours=1)
 
     # Créer une instance de l'application Flask
@@ -27,40 +29,46 @@ def create_app():
 
     CORS(app, resources={r"/*": {"origins": "*"}})
 
-    database_url = os.getenv("DATABASE_URL")
+    if (modeDebug) : 
+        # Utiliser les variables d'environnement
+        MYSQL_HOST = os.getenv('MYSQL_HOST')
+        MYSQL_PORT = os.getenv('MYSQL_PORT')
+        MYSQL_USER = os.getenv('MYSQL_USER')
+        MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
+        MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
+        database_url = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["JWT_SECRET_KEY"] = "generate-a-random-string"
+        app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
+    else :    
+        database_url = os.getenv("DATABASE_URL")
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+        # Ajoutez une clé secrète
+        app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY")
+        app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 
-    
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
- 
+    print(f"DATABASE_URL: {database_url}")
 
-    print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
-
-
-
-   
     # Configurer JWT
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
-    # Ajoutez une clé secrète
-
-    app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY")
-    app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
-
 
     # Initialisez JWT
     jwt = JWTManager(app)
 
     # Initialiser les extensions
     db.init_app(app)
-    migrate.init_app(app, db)
     
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
-
-    # Swagger configuration
-    SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
-    API_URL = "/static/swagger.yaml"  # Path to your Swagger spec
-    swagger_ui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
-    app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
+    
+    if (modeDebug) : 
+        # Creation de la BDD local
+        migrate.init_app(app, db)
+        # Swagger configuration
+        SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
+        API_URL = "/static/swagger.yaml"  # Path to your Swagger spec
+        swagger_ui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
+        app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
     # Importer les modèles nécessaires
     from .models import User, TokenBlocklist
@@ -79,7 +87,6 @@ def create_app():
     app.register_blueprint(product, url_prefix="/")
 
     return app
-
 
 if __name__ == "__main__":
     # Créer l'application Flask

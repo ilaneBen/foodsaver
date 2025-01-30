@@ -833,14 +833,14 @@ AppBar(
         if (snapshot.connectionState == ConnectionState.waiting) {
           return 
           Center(
-         child: Text('aucunes recettes disponibles',  style: TextStyle(color: Colors.red, fontSize: 15))
+         child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
            ); // Ne rien afficher pendant le chargement
         }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
    return 
           Center(
-         child: Text('aucunes recettes disponibles',  style: TextStyle(color: Colors.red, fontSize: 15))
+         child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
            ); // Ne rien afficher pendant le chargement 
                   }
 

@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Scanner OpenFoodFacts',
+      title: 'Scanner FoodSaver',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),

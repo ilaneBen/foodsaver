@@ -10,7 +10,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
 
 # DEBUG ou PROD ?
-modeDebug = True #Switch entre True et False pour signifier si on est en mode debug ou non (Prod)
+modeDebug = False #Switch entre True et False pour signifier si on est en mode debug ou non (Prod)
 
 db = SQLAlchemy()
 migrate = Migrate()

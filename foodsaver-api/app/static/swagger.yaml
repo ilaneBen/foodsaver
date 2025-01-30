@@ -1,0 +1,309 @@
+openapi: 3.0.0
+info:
+  title: Food Saver API
+  version: 1.0.0
+  description: Food Saver auth and products routes
+
+servers:
+  - url: http://localhost:5000
+    description: Local server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentification
+    description: Routes liées à l'authentification des utilisateurs (login, register, logout)
+  - name: Produit
+    description: Routes liées à la gestion des produits (ajout, récupération, recherche)
+
+paths:
+  /login:
+    post:
+      tags:
+        - Authentification
+      summary: User login
+      description: Authenticate a user and return a JWT access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: "user@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        "200":
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Bad email or password"
+
+  /register:
+    post:
+      tags:
+        - Authentification
+      summary: User registration
+      description: Register a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: "user@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        "201":
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "User created successfully"
+        "400":
+          description: Missing or invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Missing email or password"
+
+  /logout:
+    delete:
+      tags:
+        - Authentification
+      summary: User logout
+      description: Revoke the JWT of the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Token successfully revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "JWT revoked"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Missing Authorization Header"
+
+  /products/search:
+    get:
+      tags:
+        - Produit
+      summary: Search products
+      description: Search for products by barcode or French name.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: barcode
+          in: query
+          description: The barcode of the product.
+          required: false
+          schema:
+            type: string
+            example: "1234567890123"
+        - name: name_fr
+          in: query
+          description: The French name of the product.
+          required: false
+          schema:
+            type: string
+            example: "Pomme"
+      responses:
+        "200":
+          description: Product found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product:
+                    type: object
+        "400":
+          description: Missing query parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Veuillez fournir un 'barcode' ou un 'name_fr'"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Produit introuvable."
+
+  /products:
+    post:
+      tags:
+        - Produit
+      summary: Add a product
+      description: Add a new product to the database.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name_en:
+                  type: string
+                  example: "Apple"
+                name_fr:
+                  type: string
+                  example: "Pomme"
+                img_url:
+                  type: string
+                  example: "https://example.com/apple.jpg"
+                barcode:
+                  type: string
+                  example: "1234567890123"
+                brand:
+                  type: string
+                  example: "Generic"
+                categories:
+                  type: string
+                  example: "Fruit"
+      responses:
+        "201":
+          description: Product successfully added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Product added successfully"
+                  id:
+                    type: integer
+        "400":
+          description: Invalid input
+        "409":
+          description: Product with this barcode already exists
+        "500":
+          description: Internal Server Error
+
+    get:
+      tags:
+        - Produit
+      summary: Get all products
+      description: Retrieve all products from the database.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /user/products:
+    post:
+      tags:
+        - Produit
+      summary: Add a product for a user
+      description: Associate a product with a user by ID and expiration date.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id:
+                  type: integer
+                  example: 1
+                dlc:
+                  type: string
+                  format: date
+                  example: "2024-12-31"
+      responses:
+        "201":
+          description: Successfully added product for user
+        "400":
+          description: Missing fields
+        "404":
+          description: Product not found
+
+    get:
+      tags:
+        - Produit
+      summary: Get user products
+      description: Retrieve all products associated with the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved user products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

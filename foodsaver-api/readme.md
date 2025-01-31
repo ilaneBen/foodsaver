@@ -1,4 +1,4 @@
-## Gitbash Windows
+## Lancer sans Docker
 
 ## Créer l'environnement virtuel Python 
 `python -m venv .venv`
@@ -16,8 +16,24 @@
 
 ## Créer les tables
 `flask db upgrade`
-## dans le container docker
-`docker-compose run flask-app flask db upgrade`
 
 ## lancer l'API Flask
 `python app.py`
+
+### DOCKER
+
+## Detruire tous les image docker trainant
+`compose docker down`
+
+## Installer les dépendances (pour eviter d'erreur dans interface visuel)
+`pip install -r requirements.txt`
+
+## Recreer l'image docker en lancant l'instalation des dependances
+`docker compose up --build`
+
+## Lancer les migration
+`docker compose stop`
+`docker-compose run flask-app flask db upgrade`
+
+## Re Demarer le docker
+`docker compose up`

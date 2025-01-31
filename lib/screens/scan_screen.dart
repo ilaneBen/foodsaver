@@ -1,3 +1,4 @@
+import 'package:connected_fridge/components/components.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
@@ -132,8 +133,7 @@ Future<void> _fetchUserProducts(String token) async {
             img_url = openFoodData['image_front_url'] ?? img_url;
             categories = openFoodData['categories'] ?? categories;
           } else {
-            print(
-                "Erreur lors de la récupération des données depuis OpenFoodFacts.");
+            print("Erreur lors de la récupération des données depuis OpenFoodFacts.");
           }
         }
 
@@ -294,12 +294,6 @@ Future<void> _fetchUserProducts(String token) async {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Annuler"),
-                ),
-                TextButton(
-                  onPressed: () {
                     Navigator.of(context).pop(selectedDate);
                   },
                   child: const Text("Valider"),
@@ -402,15 +396,15 @@ Future<void> _fetchUserProducts(String token) async {
                 onChanged: (value) => productName = value,
               ),
               TextField(
-                decoration: const InputDecoration(labelText: "Marque"),
+                decoration: const InputDecoration(labelText: "Marque (Optionnel)"),
                 onChanged: (value) => brand = value,
               ),
               TextField(
-                decoration: const InputDecoration(labelText: "Catégories"),
+                decoration: const InputDecoration(labelText: "Catégorie (Optionnel)"),
                 onChanged: (value) => categories = value,
               ),
               TextField(
-                decoration: const InputDecoration(labelText: "Code Barre"),
+                decoration: const InputDecoration(labelText: "Code Barre (Optionnel)"),
                 onChanged: (value) => barcode = value,
               ),
             ],
@@ -418,15 +412,24 @@ Future<void> _fetchUserProducts(String token) async {
           actions: [
             TextButton(
               onPressed: () async {
-                if (productName != null) {
-                  await _handleProductSubmission(
-                    barcode: barcode,
-                    nameFr: productName!,
-                    categories: categories,
-                    brand: brand,
-                    dlc: '', // DLC sera demandée plus tard
-                  );
-                  Navigator.of(context).pop();
+                if (productName != null && productName != "") {
+                  try {
+                    await _handleProductSubmission(
+                      barcode: barcode,
+                      nameFr: productName!,
+                      categories: categories,
+                      brand: brand,
+                      dlc: '', // DLC sera demandée plus tard
+                    );
+                    Navigator.of(context).pop();
+                  } catch (e) {
+                    await showAlert(
+                      context: context,
+                      title: 'Erreur lors de sauvegarde de produit',
+                      desc: 'Veuillez re essayer d\'ajouter le produit',
+                      onPressed: () {}
+                    );
+                  }
                 }
                 Navigator.of(context).pop();
               },

@@ -1,5 +1,4 @@
 import 'package:connected_fridge/screens/signup_screen.dart';
-
 import '/screens/scan_screen.dart';
 import '/screens/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +18,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final storage = FlutterSecureStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    storage.delete(key: 'auth_token'); // Suppression du token
+  }
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;

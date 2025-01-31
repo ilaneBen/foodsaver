@@ -12,26 +12,15 @@ import psycopg2
 import requests
 from datetime import datetime, timedelta
 
-# DEBUG ou PROD ?
-modeDebug = False #Switch entre True et False pour signifier si on est en mode debug ou non (Prod)
+# Charger le fichier .env
+load_dotenv()
 
 # Initialisation des extensions Flask
 db = SQLAlchemy()
 migrate = Migrate()
 cors = CORS()
 scheduler = APScheduler()
-database_url = ''
-
-if (modeDebug) : 
-    # Utiliser les variables d'environnement
-    MYSQL_HOST = os.getenv('MYSQL_HOST')
-    MYSQL_PORT = os.getenv('MYSQL_PORT')
-    MYSQL_USER = os.getenv('MYSQL_USER')
-    MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
-    MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
-    database_url = f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
-else :    
-    database_url = os.getenv("DATABASE_URL")
+database_url = os.environ.get("DATABASE_URL")
 
 def check_near_expiration():
     """ Vérifie la BDD et envoie un email si des produits expirent dans 2 jours """
@@ -86,10 +75,6 @@ def send_email(to_email, product_list):
 
 # Fonction pour créer l'application Flask
 def create_app():
-    # Charger le fichier .env
-    
-    load_dotenv()
-
     ACCESS_EXPIRES = timedelta(hours=1)
 
     # Créer une instance de l'application Flask
@@ -98,16 +83,10 @@ def create_app():
     # Activation du CORS
     CORS(app, resources={r"/*": {"origins": "*"}})
 
-    if (modeDebug) :
-        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-        app.config["JWT_SECRET_KEY"] = "generate-a-random-string"
-        app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
-    else :    
-        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-        # Ajoutez une clé secrète
-        app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY")
-        app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # Ajoutez une clé secrète
+    app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 
     print(f"DATABASE_URL: {database_url}")
 
@@ -126,12 +105,11 @@ def create_app():
     
     migrate.init_app(app, db)
 
-    if (modeDebug) : 
-        # Swagger configuration
-        SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
-        API_URL = "/static/swagger.yaml"  # Path to your Swagger spec
-        swagger_ui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
-        app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
+    # Swagger configuration
+    SWAGGER_URL = "/swagger"  # URL for accessing Swagger UI
+    API_URL = "/static/swagger.yaml"  # Path to your Swagger spec
+    swagger_ui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
+    app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
     # Importer les modèles nécessaires
     from .models import User, TokenBlocklist

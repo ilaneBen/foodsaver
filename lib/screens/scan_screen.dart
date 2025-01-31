@@ -342,7 +342,7 @@ Future<void> _fetchUserProducts(String token) async {
     }
   }
 
-  Future<void> _deleteProduct(String productId, int index) async {
+  Future<void> _deleteProduct(String productId) async {
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -369,7 +369,7 @@ Future<void> _fetchUserProducts(String token) async {
         _fetchUserProducts(token);
         // Mise à jour de la liste des produits
         setState(() {
-          scannedProducts.removeAt(index);
+          scannedProducts.removeAt(scannedProducts.indexWhere((element) => element['id'] == productId));
         });
       } else if (response.statusCode == 404) {
         print("Produit introuvable (Code HTTP : 404).");
@@ -791,7 +791,19 @@ void _showExpiredDialog(BuildContext context) {
                             Column(
                               children: [
                                 ExpansionTile(
-                                  trailing: SizedBox.shrink(),
+                                  trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(Icons.copy),
+                                                    onPressed: () => _duplicateProduct(item['id'].toString()),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.delete),
+                                                    onPressed: () => _deleteProduct(item['id'].toString()),
+                                                  ),
+                                                ],
+                                              ),
                                   leading: ClipRRect(
                                     borderRadius: BorderRadius.circular(8.0),
                                     child: item['img_url'] != null && item['img_url'].isNotEmpty

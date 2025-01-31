@@ -129,12 +129,7 @@ Merci de contribuer au projet **Connected Fridge** !
 
 ---
 
-## License
+## 📄 Documentation
 
-Ce projet est sous licence [MIT](LICENSE).
-
----
-## Documentation annexe
-
-[Documentation du projet](#https://docs.google.com/document/d/10WK1TIf48ZmF6MZunEQcbuqjy8V09d_elKhwGRWMXCQ/edit?usp=sharing) (cahier des charges, budget, mode d emploi, ...)
-[Slide de présentation](#https://docs.google.com/presentation/d/1JxPr1LYyJETx1AS_mChZM3OzcLFEZHRMet7D79T-RqI/edit?usp=sharing) du projet 
+- [📘 Documentation du projet](https://docs.google.com/document/d/10WK1TIf48ZmF6MZunEQcbuqjy8V09d_elKhwGRWMXCQ/edit?usp=sharing) *(Cahier des charges, budget, mode d'emploi, ...)*  
+- [📊 Slide de présentation](https://docs.google.com/presentation/d/1JxPr1LYyJETx1AS_mChZM3OzcLFEZHRMet7D79T-RqI/edit?usp=sharing) *(Présentation du projet)*  

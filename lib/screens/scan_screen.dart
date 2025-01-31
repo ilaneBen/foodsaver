@@ -591,7 +591,7 @@ int _countExpiringSoon(List<Map<String, dynamic>> scannedProducts) {
     if (item['dlc'] == null) return false;
 
     DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
-    return dlc.isBefore(threeDaysLater) && dlc.isAfter(now);
+    return dlc.isBefore(threeDaysLater) && dlc.isAfter(now.add(Duration(days: -1)));
   }).length;
 }
 
@@ -603,11 +603,9 @@ int _countExpired(List<Map<String, dynamic>> scannedProducts) {
 
     DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
     
-    return dlc.isBefore(now); // Si la DLC est avant aujourd'hui, c'est périmé
+    return dlc.isBefore(now) && dlc.day < DateTime.now().day; // Si la DLC est avant aujourd'hui, c'est périmé
   }).length;
 }
-
-
 
 void _showExpiringSoonDialog(BuildContext context) {
   final now = DateTime.now();
@@ -617,7 +615,7 @@ void _showExpiringSoonDialog(BuildContext context) {
     if (item['dlc'] == null) return false;
 
     DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
-    return dlc.isBefore(threeDaysLater) && dlc.isAfter(now);
+    return dlc.isBefore(threeDaysLater) && dlc.isAfter(now.add(Duration(days: -1)));
   }).toList();
 
   showDialog(
@@ -659,7 +657,7 @@ void _showExpiredDialog(BuildContext context) {
 
     DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
     
-    return dlc.isBefore(now);
+    return dlc.isBefore(now) && dlc.day < DateTime.now().day;
   }).toList();
 
   showDialog(
@@ -707,10 +705,13 @@ void _showExpiredDialog(BuildContext context) {
         leading: IconButton(
           icon: const Icon(Icons.logout),
           onPressed: _logout,
+          color: Colors.white,
         ),
         actions: [
-          Padding(
+          _countExpiringSoon(scannedProducts) > 0 ?
+          Container(
             padding: const EdgeInsets.only(right: 20.0),
+            margin: const EdgeInsets.only(right: 20.0),
             child: GestureDetector(
               onTap: () {
                 _showExpiringSoonDialog(context); // Ouvre la liste des produits périmant bientôt
@@ -722,15 +723,18 @@ void _showExpiredDialog(BuildContext context) {
                   ),
                 showBadge: _countExpiringSoon(scannedProducts) > 0,
                 badgeStyle: const badges.BadgeStyle(
-                  badgeColor: Colors.red,
+                  badgeColor: Colors.orange,
                 ),
                 position: badges.BadgePosition.topEnd(top: 0, end: 0),
-                child: const Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+                child: const Icon(Icons.fastfood_outlined, size: 28, color: Colors.white), // Icône d'alerte
               ),
             ),
-          ),
-          Padding(
+          ) :
+          const SizedBox.shrink(),
+          _countExpired(scannedProducts) > 0 ?
+          Container(
             padding: const EdgeInsets.only(right: 20.0),
+            margin: const EdgeInsets.only(right: 20.0),
             child: GestureDetector(
               onTap: () {
                 _showExpiredDialog(context); // Ouvre la liste des produits périmant bientôt
@@ -742,13 +746,14 @@ void _showExpiredDialog(BuildContext context) {
                 ),
                 showBadge: _countExpired(scannedProducts) > 0,
                 badgeStyle: const badges.BadgeStyle(
-                  badgeColor: Colors.orange,
+                  badgeColor: Colors.red,
                 ),
                 position: badges.BadgePosition.topEnd(top: 0, end: 0),
-                child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+                child: Icon(Icons.fastfood_outlined, size: 28, color: Colors.white), // Icône d'alerte
               ),
             ),
-          ),
+          ):
+          const SizedBox.shrink(),
         ],
       ),
 
@@ -813,26 +818,16 @@ void _showExpiredDialog(BuildContext context) {
                                             height: 50,
                                             fit: BoxFit.contain,
                                             errorBuilder: (context, error, stackTrace) {
-                                              return Image.asset(
-                                                '${prefixImage}assets/images/defaut.jpg',
-                                                width: 50,
-                                                height: 50,
-                                                fit: BoxFit.cover,
-                                              );
+                                              return Icon(Icons.fastfood);
                                             },
                                           )
-                                        : Image.asset(
-                                            '${prefixImage}assets/images/defaut.jpg',
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover,
-                                          ),
+                                        : Icon(Icons.fastfood),
                                   ),
                                   title: Text(item['name_fr'] ?? "Nom inconnu"),
                                   subtitle: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      dlc.isBefore(DateTime.now())
+                                      dlc.isBefore(DateTime.now()) && dlc.day < DateTime.now().day
                                           ? const Text(
                                               "Produit périmé",
                                               style: TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),

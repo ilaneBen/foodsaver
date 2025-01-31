@@ -342,7 +342,7 @@ Future<void> _fetchUserProducts(String token) async {
     }
   }
 
-  Future<void> _deleteProduct(String productId) async {
+  Future<void> _deleteProduct(String productId, int index) async {
     final token = await storage.read(key: 'auth_token');
 
     if (token == null) {
@@ -366,7 +366,7 @@ Future<void> _fetchUserProducts(String token) async {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         print("Produit supprimé avec succès.");
-        _fetchUserProducts();
+        _fetchUserProducts(token);
         // Mise à jour de la liste des produits
         setState(() {
           scannedProducts.removeAt(index);
@@ -409,7 +409,7 @@ Future<void> _fetchUserProducts(String token) async {
                 decoration: const InputDecoration(labelText: "Catégories"),
                 onChanged: (value) => categories = value,
               ),
-               TextField(
+              TextField(
                 decoration: const InputDecoration(labelText: "Code Barre"),
                 onChanged: (value) => barcode = value,
               ),
@@ -697,61 +697,60 @@ void _showExpiredDialog(BuildContext context) {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar:
-AppBar(
-  backgroundColor: kTextColor,
-  title: const Text(
-    'Scanner Foodsaver',
-    style: TextStyle(color: Colors.white),
-  ),
-  centerTitle: true,
-  leading: IconButton(
-    icon: Icon(Icons.logout),
-    onPressed: _logout,
-  ),
-  actions: [
-    Padding(
-      padding: const EdgeInsets.only(right: 20.0),
-      child: GestureDetector(
-        onTap: () {
-          _showExpiringSoonDialog(context); // Ouvre la liste des produits périmant bientôt
-        },
-        child: badges.Badge(
-          badgeContent: Text(
-            _countExpiringSoon(scannedProducts).toString(),
-            style: TextStyle(color: Colors.white, fontSize: 12),
-          ),
-          showBadge: _countExpiringSoon(scannedProducts) > 0,
-          badgeStyle: badges.BadgeStyle(
-            badgeColor: Colors.red,
-          ),
-          position: badges.BadgePosition.topEnd(top: 0, end: 0),
-          child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+      appBar: AppBar(
+        backgroundColor: kTextColor,
+        title: const Text(
+          'Scanner Foodsaver',
+          style: TextStyle(color: Colors.white),
         ),
-      ),
-    ),
-    Padding(
-      padding: const EdgeInsets.only(right: 20.0),
-      child: GestureDetector(
-        onTap: () {
-          _showExpiredDialog(context); // Ouvre la liste des produits périmant bientôt
-        },
-        child: badges.Badge(
-          badgeContent: Text(
-            _countExpired(scannedProducts).toString(),
-            style: TextStyle(color: Colors.white, fontSize: 12),
-          ),
-          showBadge: _countExpired(scannedProducts) > 0,
-          badgeStyle: badges.BadgeStyle(
-            badgeColor: Colors.orange,
-          ),
-          position: badges.BadgePosition.topEnd(top: 0, end: 0),
-          child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: _logout,
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: GestureDetector(
+              onTap: () {
+                _showExpiringSoonDialog(context); // Ouvre la liste des produits périmant bientôt
+              },
+              child: badges.Badge(
+                badgeContent: Text(
+                  _countExpiringSoon(scannedProducts).toString(),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                showBadge: _countExpiringSoon(scannedProducts) > 0,
+                badgeStyle: const badges.BadgeStyle(
+                  badgeColor: Colors.red,
+                ),
+                position: badges.BadgePosition.topEnd(top: 0, end: 0),
+                child: const Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: GestureDetector(
+              onTap: () {
+                _showExpiredDialog(context); // Ouvre la liste des produits périmant bientôt
+              },
+              child: badges.Badge(
+                badgeContent: Text(
+                  _countExpired(scannedProducts).toString(),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                showBadge: _countExpired(scannedProducts) > 0,
+                badgeStyle: const badges.BadgeStyle(
+                  badgeColor: Colors.orange,
+                ),
+                position: badges.BadgePosition.topEnd(top: 0, end: 0),
+                child: Icon(Icons.warning, size: 28, color: Colors.white), // Icône d'alerte
+              ),
+            ),
+          ),
+        ],
       ),
-    ),
-  ],
-),
 
       body: FutureBuilder<String?>(
         future: _getToken(),
@@ -769,203 +768,189 @@ AppBar(
             children: [
               Expanded(
                 child: scannedProducts.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "Aucun produit enregistré.",
-                          style: TextStyle(color: Colors.black54, fontSize: 16),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: scannedProducts.length,
-                        itemBuilder: (context, index) {
-                          final item = scannedProducts[index];
-                               DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
-
-                          return Card(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 8.0, horizontal: 16.0),
-                              child:
-                              
-                              Container(
-                                color: Colors.white,
-                                child: 
-                                Column(
-                                  children: [
-                              
-                               ExpansionTile(
-                               trailing: SizedBox.shrink(),
-  leading: ClipRRect(
-    borderRadius: BorderRadius.circular(8.0),
-    child: item['img_url'] != null && item['img_url'].isNotEmpty
-        ? Image.network(
-            item['img_url'],
-            width: 50,
-            height: 50,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return Image.asset(
-                '${prefixImage}assets/images/defaut.jpg',
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-              );
-            },
-          )
-        : Image.asset(
-            '${prefixImage}assets/images/defaut.jpg',
-            width: 50,
-            height: 50,
-            fit: BoxFit.cover,
-          ),
-  ),
-  title: Text(item['name_fr'] ?? "Nom inconnu"),
-  subtitle: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      dlc.isBefore(DateTime.now())
-          ? Text(
-              "Produit périmé",
-              style: TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
-            )
-          : Text(
-              "DLC: ${_formatDate(item['dlc'])}",
-              style: TextStyle(fontSize: 16),
-            ),
-             FutureBuilder<List<Map<String, dynamic>>>(
-      future: _fetchRecipes(item['name_en'] ?? '', item['dlc']),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return 
-          Center(
-         child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
-           ); // Ne rien afficher pendant le chargement
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-   return 
-          Center(
-         child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
-           ); // Ne rien afficher pendant le chargement 
-                  }
-
-        // Affichage de "Recettes" et de l'icône seulement si des recettes existent
-        return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-
-          children: [
-            Text(
-              'Recettes',
-              style: TextStyle(color: Colors.green, fontSize: 15),
-            ),
-            Icon(Icons.arrow_drop_down),
-          ],
-        );
-      },
-    ),
-    ],
-  ),
-  
-  children: [
-    // FutureBuilder pour afficher les recettes
-    FutureBuilder<List<Map<String, dynamic>>>(
-      future: _fetchRecipes(item['name_en'] ?? '', item['dlc']),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Aucune recette disponible',
-              style: TextStyle(color: Colors.red, fontSize: 15),
-            ),
-          );
-        }
-
-        // ExpansionTile pour afficher les recettes
-        return Column(
-          children: snapshot.data!.map((recipe) {
-            return ExpansionTile(
-            
-              leading: Image.network(recipe['strMealThumb'], width: 50, height: 50),
-              title: Text(recipe['strMeal'] ?? "Nom inconnu"),
-              children: [
-                // FutureBuilder pour afficher les détails de la recette
-                FutureBuilder<Map<String, dynamic>?>(
-                    future: _fetchRecipeDetails(recipe['idMeal']),
-                    builder: (context, detailsSnapshot) {
-                      if (detailsSnapshot.connectionState == ConnectionState.waiting) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-
-                      if (!detailsSnapshot.hasData || detailsSnapshot.data == null) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text("Aucune information détaillée trouvée."),
-                        );
-                      }
-
-                      final recipeDetails = detailsSnapshot.data!;
-
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                              Text(
-                              "Ingrédients :",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            ...List.generate(20, (index) {
-                              final ingredient = recipeDetails['strIngredient${index + 1}'];
-                              final measure = recipeDetails['strMeasure${index + 1}'];
-
-                              if (ingredient != null && ingredient.isNotEmpty) {
-                                return Text("$measure $ingredient");
-                              }
-                              return SizedBox.shrink();
-                            }),
-                            Text(
-                              "Instructions :",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            Text(recipeDetails['strInstructions'] ?? "Aucune instruction disponible"),
-
-                            SizedBox(height: 10),
-
-                          
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                
-              ],
-            );
-          }).toList(),
-        );
-      },
-    ),
-  ],
-),
-
-                              
-                                   
-                     
-                                ],
-                                )
-                                 )
-                          );
-                        },
+                  ? const Center(
+                      child: Text(
+                        "Aucun produit enregistré.",
+                        style: TextStyle(color: Colors.black54, fontSize: 16),
                       ),
+                    )
+                  : ListView.builder(
+                      itemCount: scannedProducts.length,
+                      itemBuilder: (context, index) {
+                        final item = scannedProducts[index];
+                              DateTime dlc = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'").parseUtc(item['dlc']);
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 16.0),
+                          child:
+                          
+                          Container(
+                            color: Colors.white,
+                            child: 
+                            Column(
+                              children: [
+                                ExpansionTile(
+                                  trailing: SizedBox.shrink(),
+                                  leading: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    child: item['img_url'] != null && item['img_url'].isNotEmpty
+                                        ? Image.network(
+                                            item['img_url'],
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Image.asset(
+                                                '${prefixImage}assets/images/defaut.jpg',
+                                                width: 50,
+                                                height: 50,
+                                                fit: BoxFit.cover,
+                                              );
+                                            },
+                                          )
+                                        : Image.asset(
+                                            '${prefixImage}assets/images/defaut.jpg',
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                  title: Text(item['name_fr'] ?? "Nom inconnu"),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      dlc.isBefore(DateTime.now())
+                                          ? const Text(
+                                              "Produit périmé",
+                                              style: TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.bold),
+                                            )
+                                          : Text(
+                                              "DLC: ${_formatDate(item['dlc'])}",
+                                              style: TextStyle(fontSize: 16),
+                                            ),
+                                      FutureBuilder<List<Map<String, dynamic>>>(
+                                        future: _fetchRecipes(item['name_en'] ?? '', item['dlc']),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return const Center(
+                                              child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
+                                            ); // Ne rien afficher pendant le chargement
+                                          }
+
+                                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                            return const Center(
+                                              child: Text('Aucune recette disponible',  style: TextStyle(color: Colors.red, fontSize: 15))
+                                            ); // Ne rien afficher pendant le chargement 
+                                          }
+
+                                          // Affichage de "Recettes" et de l'icône seulement si des recettes existent
+                                          return const Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                'Recettes',
+                                                style: TextStyle(color: Colors.green, fontSize: 15),
+                                              ),
+                                              Icon(Icons.arrow_drop_down),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  children: [
+                                    // FutureBuilder pour afficher les recettes
+                                    FutureBuilder<List<Map<String, dynamic>>>(
+                                      future: _fetchRecipes(item['name_en'] ?? '', item['dlc']),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState == ConnectionState.waiting) {
+                                          return const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Center(child: CircularProgressIndicator()),
+                                          );
+                                        }
+
+                                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                          return const Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Text(
+                                              'Aucune recette disponible',
+                                              style: TextStyle(color: Colors.red, fontSize: 15),
+                                            ),
+                                          );
+                                        }
+
+                                        // ExpansionTile pour afficher les recettes
+                                        return Column(
+                                          children: snapshot.data!.map((recipe) {
+                                            return ExpansionTile(
+                                              leading: Image.network(recipe['strMealThumb'], width: 50, height: 50),
+                                              title: Text(recipe['strMeal'] ?? "Nom inconnu"),
+                                              children: [
+                                                // FutureBuilder pour afficher les détails de la recette
+                                                FutureBuilder<Map<String, dynamic>?>(
+                                                  future: _fetchRecipeDetails(recipe['idMeal']),
+                                                  builder: (context, detailsSnapshot) {
+                                                    if (detailsSnapshot.connectionState == ConnectionState.waiting) {
+                                                      return const Padding(
+                                                        padding: EdgeInsets.all(8.0),
+                                                        child: Center(child: CircularProgressIndicator()),
+                                                      );
+                                                    }
+
+                                                    if (!detailsSnapshot.hasData || detailsSnapshot.data == null) {
+                                                      return const Padding(
+                                                        padding: EdgeInsets.all(8.0),
+                                                        child: Text("Aucune information détaillée trouvée."),
+                                                      );
+                                                    }
+
+                                                    final recipeDetails = detailsSnapshot.data!;
+
+                                                    return Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                            const Text(
+                                                            "Ingrédients :",
+                                                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                          ),
+                                                          ...List.generate(20, (index) {
+                                                            final ingredient = recipeDetails['strIngredient${index + 1}'];
+                                                            final measure = recipeDetails['strMeasure${index + 1}'];
+
+                                                            if (ingredient != null && ingredient.isNotEmpty) {
+                                                              return Text("$measure $ingredient");
+                                                            }
+                                                            return SizedBox.shrink();
+                                                          }),
+                                                          const Text(
+                                                            "Instructions :",
+                                                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                          ),
+                                                          Text(recipeDetails['strInstructions'] ?? "Aucune instruction disponible"),
+                                                          const SizedBox(height: 10),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          }).toList(),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            )
+                          )
+                        );
+                      },
+                    ),
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -992,7 +977,7 @@ AppBar(
                   ),
                 ],
               ),
-              SizedBox(height: 20), // Ajoute un espace de 20 pixels en bas
+              const SizedBox(height: 20), // Ajoute un espace de 20 pixels en bas
             ],
           );
         },
